@@ -129,8 +129,9 @@ function mergeStats(previous, incoming, elapsedMs) {
   const maxOnline = prev.onlineSeconds + Math.ceil(seconds) + ONLINE_SLACK;
   next.answered = Math.max(prev.answered, Math.min(next.answered, maxAnswered));
   next.onlineSeconds = Math.max(prev.onlineSeconds, Math.min(next.onlineSeconds, maxOnline));
-  // prev.correct ≤ prev.answered ≤ next.answered，因此夹紧后仍满足正确率 ≤ 100%
-  next.correct = Math.max(prev.correct, Math.min(next.correct, next.answered));
+  // 正确数属于同一累计答题快照；旧设备的较小快照不能单独抬高正确率。
+  const acceptedAnswers = next.answered - prev.answered;
+  next.correct = Math.max(prev.correct, Math.min(next.correct, prev.correct + acceptedAnswers));
   return { answered: next.answered, correct: next.correct, onlineSeconds: next.onlineSeconds };
 }
 

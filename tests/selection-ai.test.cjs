@@ -321,7 +321,7 @@ test('3. Selection works across Handouts, Old Question Bank, and Book Practice',
   const page = await browser.newPage();
   t.after(()=>page.close());
   await page.addInitScript(() => localStorage.setItem('acct_token', 'token123'));
-  await page.goto(base+'/#/learn/1/reading', { waitUntil: 'domcontentloaded' });
+  await page.goto(base+'/#/unit/1/reading', { waitUntil: 'domcontentloaded' });
 
   // A. Handouts: open Study Guide
   await page.waitForSelector('#studyGuide:not([hidden]) .study-reading');
@@ -596,7 +596,7 @@ test('10. Context extraction excludes hidden FRQ reference answers, and KaTeX do
 
   // Verify KaTeX math in Study Guide
   await page.locator('.study-ai-close').click();
-  await page.goto(base+'/#/learn/1/reading');
+  await page.goto(base+'/#/unit/1/reading');
   await page.waitForSelector('#studyGuide:not([hidden]) .katex');
 
   const mathText = await page.evaluate(() => {

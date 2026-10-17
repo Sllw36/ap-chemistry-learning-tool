@@ -71,6 +71,7 @@ TAIL = '''
 <script src="assets/study-content.js"></script>
 <script src="assets/topic-notes.js"></script>
 <script src="assets/lesson-details.js"></script>
+<script src="assets/curriculum.js"></script>
 <script src="assets/lecture-glossary.js"></script>
 <script src="assets/study-enhancements.js"></script>
 <script src="assets/material-app.js"></script>

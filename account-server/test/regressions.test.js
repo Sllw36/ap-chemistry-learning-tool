@@ -189,6 +189,19 @@ test('statistics are sanitised and accuracy can never exceed 100%', async t => {
   assert.deepEqual(await pull(),s);
 });
 
+test('stale device snapshots cannot raise the correct count without new answers', async t => {
+  const f=fixture(t); await f.start();
+  const reg=await f.request('POST','/api/register',{username:'learner',password:'test-password'});
+  const push=stats=>f.request('POST','/api/sync/push',{stats},reg.body.token);
+  await push({answered:100,correct:10,onlineSeconds:60});
+  for(const answered of [50,100]){
+    const result=await push({answered,correct:50,onlineSeconds:60});
+    assert.deepEqual(result.body.stats,{answered:100,correct:10,onlineSeconds:60});
+  }
+  const fresh=await push({answered:110,correct:18,onlineSeconds:70});
+  assert.deepEqual(fresh.body.stats,{answered:110,correct:18,onlineSeconds:70});
+});
+
 test('an implausible jump is capped instead of trusted, and statistics only grow', async t => {
   const f = fixture(t); await f.start();
   const reg = await f.request('POST','/api/register',{username:'cheat',password:'test-password'});

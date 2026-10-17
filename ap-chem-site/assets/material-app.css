@@ -59,6 +59,12 @@ html.material-app { scroll-padding-top: 96px; --ui-viewport-height: calc(100dvh 
 .m-appbar-left, .m-appbar-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
 #m-location { font-size: 14px; color: var(--md-sys-color-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .m-appbar-actions { flex-shrink: 0; }
+.m-appbar-left { min-width: 48px; }
+.m-appbar .m-icon-button { flex-shrink: 0; }
+#m-more { display: none; }
+.m-shortcuts { inset: auto; margin: 0; padding: 8px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); box-shadow: 0 8px 24px #0003; }
+.m-shortcuts button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 0 16px; border: 0; border-radius: 8px; background: transparent; color: inherit; }
+.m-shortcuts button:hover { background: var(--md-sys-color-surface-container-high); }
 .m-language-button { display: flex; align-items: center; gap: 8px; min-height: 48px; border: 0; border-radius: 24px; padding: 0 12px; background: transparent; color: var(--md-sys-color-on-surface-variant); font-size: 13px; }
 .m-language-button:hover { background: var(--md-sys-color-surface-container-high); }
 .m-language-button .m-icon { width: 18px; height: 18px; flex-basis: 18px; }
@@ -73,7 +79,7 @@ html.material-app { scroll-padding-top: 96px; --ui-viewport-height: calc(100dvh 
 #m-directory { display: none; }
 .m-account { display: flex; gap: 8px; align-items: center; border: 1px solid var(--md-sys-color-outline-variant); background: transparent; border-radius: 24px; min-height: 48px; max-width: 180px; padding: 0 16px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .m-account:hover { background: var(--md-sys-color-surface-container-low); }
-.m-account-icon { display: flex; }
+.m-account::before { content: ''; display: block; width: 24px; height: 24px; flex-shrink: 0; background: currentColor; mask: var(--account-icon) center / contain no-repeat; }
 .m-content { max-width: 1080px; margin: 0 auto; padding: 24px 48px 80px; min-width: 0; outline: 0; }
 .m-bottom-nav { display: none; }
 .m-page-heading { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
@@ -390,11 +396,12 @@ html.material-app { scroll-padding-top: 96px; --ui-viewport-height: calc(100dvh 
   .m-appbar { min-height: 64px; padding: 8px 12px; gap: 8px; }
   .m-appbar-left { gap: 0; }
   .m-appbar-actions { gap: 0; }
+  #m-formula, #m-translate { display: none; }
+  #m-more { display: inline-flex; }
   .m-language-button { gap: 4px; padding: 0 10px; }
   .m-language-button .m-language-value { display: none; }
   #m-location { font-size: 13px; margin-left: 4px; }
-  .m-account { font-size: 12px; padding: 0 12px; max-width: 100px; gap: 6px; }
-  .m-account-icon { display: none; }
+  .m-account { font-size: 0; padding: 0; width: 48px; max-width: 48px; gap: 0; justify-content: center; }
   #m-back { display: none; }
   .m-content { padding: 24px 20px 112px; }
   .m-bottom-nav { display: flex; position: fixed; z-index: 30; bottom: 0; inset-inline: 0; justify-content: space-around; padding: 8px 4px max(8px, env(safe-area-inset-bottom)); background: var(--md-sys-color-surface-container); border-top: 1px solid var(--md-sys-color-outline-variant); }

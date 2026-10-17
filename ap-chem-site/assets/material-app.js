@@ -6,10 +6,10 @@
   const chapters = window.AP_STUDY.chapters;
   const lessons = window.AP_LESSONS;
   const uiText = new Map(Object.entries({
-    '跳到正文':'Skip to content','学习':'Learn','练习':'Practice','复习':'Review','实验':'Labs','工具':'Tools','学习统计':'Study stats','排行榜':'Leaderboard','在线时长、做题数量与正确率':'Time, questions and accuracy','做题数量排名与正确率':'Ranked by questions, with accuracy','学习设置':'Settings','课程目录':'Chapters','关闭目录':'Close chapters','返回':'Back','外观':'Appearance','账号':'Account','课程':'Courses','搜索课程':'Search courses','未找到课程':'No courses found','继续阅读':'Continue reading','按知识点':'By topic','书本题库':'Book practice','错题':'Mistakes','书本错题':'Book mistakes','生词':'Vocabulary','讲义':'Reading','例题':'Examples','自测':'Checks','实验与知识点':'Labs and topics','打开单元':'Open unit','公式与周期表':'Reference','常用公式、符号与元素数据':'Formulas, symbols and elements','课程大纲':'Course outline','AP 单元与知识点':'AP units and topics','查缺补漏':'Topic coverage','按知识点检查掌握情况':'Coverage by topic','词典':'Dictionary','化学词汇与中文释义':'Chemistry terms and definitions','字号、题目呈现与数据备份':'Text size, practice view and backup','界面语言':'Interface language','讲义语言':'Reading language','中英对照':'Bilingual','题型':'Question type','知识点':'Topics','题量':'Questions','界面缩放':'Interface scale','主导航':'Main navigation','底部导航':'Bottom navigation','章节目录':'Chapters','练习来源':'Practice source','复习内容':'Review source'
+    '跳到正文':'Skip to content','学习':'Learn','练习':'Practice','复习':'Review','实验':'Labs','工具':'Tools','学习统计':'Study stats','排行榜':'Leaderboard','在线时长、做题数量与正确率':'Time, questions and accuracy','做题数量排名与正确率':'Ranked by questions, with accuracy','学习设置':'Settings','课程目录':'Units','关闭目录':'Close chapters','返回':'Back','外观':'Appearance','账号':'Account','课程':'Courses','搜索课程':'Search courses','未找到课程':'No courses found','继续阅读':'Continue reading','按知识点':'By topic','书本题库':'Book practice','错题':'Mistakes','书本错题':'Book mistakes','生词':'Vocabulary','讲义':'Reading','例题':'Examples','自测':'Checks','实验与知识点':'Labs and topics','打开单元':'Open unit','公式与周期表':'Reference','常用公式、符号与元素数据':'Formulas, symbols and elements','课程大纲':'Course outline','AP 单元与知识点':'AP units and topics','查缺补漏':'Topic coverage','按知识点检查掌握情况':'Coverage by topic','词典':'Dictionary','化学词汇与中文释义':'Chemistry terms and definitions','字号、题目呈现与数据备份':'Text size, practice view and backup','界面语言':'Interface language','讲义语言':'Reading language','中英对照':'Bilingual','题型':'Question type','知识点':'Topics','题量':'Questions','界面缩放':'Interface scale','主导航':'Main navigation','底部导航':'Bottom navigation','章节目录':'Units','练习来源':'Practice source','复习内容':'Review source'
   }));
   const uiOriginal=new WeakMap();
-  Object.entries({'翻译':'Translation','单词与段落':'Words and passages','翻译原文':'Text to translate','输入英文单词或段落':'Enter an English word or passage'}).forEach(([zh,en])=>uiText.set(zh,en));
+  Object.entries({'公式表':'Formula sheet','更多':'More','翻译':'Translation','单词与段落':'Words and passages','翻译原文':'Text to translate','输入英文单词或段落':'Enter an English word or passage'}).forEach(([zh,en])=>uiText.set(zh,en));
   Object.entries({'显示桌宠':'Show pet','尺寸':'Size','颜色':'Color','移动':'Movement','桌宠':'Pet','设置保存在此设备。':'Saved on this device.','页脚署名的字号':'Footer credit size','自定义区老师颜色 HEX':'Custom pet color HEX'}).forEach(([zh,en])=>uiText.set(zh,en));
   const isEnglish=()=>window.AP_LEARNING.language==='en';
   function localize(root){
@@ -45,9 +45,11 @@
   const navMarkup = () => navItems.map(([id,label,i])=>`<a href="#/${id}" class="m-nav-link" data-route-nav="${id}"><span>${icon(i)}</span><b>${label}</b></a>`).join('');
   const legacyShow = window.__showModule;
   const legacyChapter = window.__goChapter;
-  let rendering = false, currentRoute = '', chapterId = 1, guideTab='reading', readingPoint='';
-  const positions = read('apchem.reader.positions.v1',{});
-  let last = read('apchem.reader.last.v1',null);
+  let rendering = false, currentRoute = '', chapterId = 1, guideTab='reading', readingPoint='', renderedHash='';
+  const curriculum = window.AP_CURRICULUM;
+  const reader = read('apchem.reader.v2',null) || curriculum.migrate(read('apchem.reader.positions.v1',{}),read('apchem.reader.last.v1',null));
+  save('apchem.reader.v2',reader);
+  const unitHref = (id,tab='reading') => tab==='reading' ? curriculum.href(curriculum.latest(reader,id)) : `#/unit/${id}/${tab}`;
   const shell = node('div','m-shell');
   shell.innerHTML = `<a class="m-skip" href="#main-content">跳到正文</a>
     <aside class="m-sidebar"><a class="m-brand" href="#/learn" aria-label="AP Chem"><span class="m-wordmark-ap">AP</span><span class="m-wordmark-chem">Chem</span></a><nav class="m-navigation" aria-label="主导航">${navMarkup()}</nav><div id="directory-slot"></div><div class="m-sidebar-footer"><button id="m-settings" type="button">学习设置</button></div></aside>
@@ -63,6 +65,11 @@
   const translateButton=node('button','m-icon-button');translateButton.id='m-translate';translateButton.type='button';translateButton.setAttribute('aria-label','翻译');translateButton.title='翻译';translateButton.innerHTML=icon('translate');
   translateButton.onclick=()=>{const target=document.getElementById('btnTrans');if(target)target.click();};
   $('m-formula').before(translateButton);
+  const more=node('button','m-icon-button m-more');more.id='m-more';more.type='button';more.setAttribute('aria-label','更多');more.setAttribute('popovertarget','m-shortcuts');more.innerHTML='<svg class="m-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+  $('appearance').before(more);
+  const shortcuts=node('div','m-shortcuts');shortcuts.id='m-shortcuts';shortcuts.setAttribute('popover','auto');
+  [['公式表','formula','btnFormula'],['翻译','translate','btnTrans']].forEach(([label,i,id])=>{const b=node('button');b.type='button';b.innerHTML=icon(i)+`<span>${label}</span>`;b.onclick=()=>{shortcuts.hidePopover();$(id).click();};shortcuts.append(b);});document.body.append(shortcuts);
+  shortcuts.addEventListener('beforetoggle',e=>{if(e.newState==='open'){const r=more.getBoundingClientRect();shortcuts.style.top=(r.bottom+8)+'px';shortcuts.style.right=Math.max(12,innerWidth-r.right)+'px';localize(shortcuts);}});
   const languageMenu=node('div','m-language-menu');languageMenu.id='reading-language-menu';languageMenu.setAttribute('popover','auto');languageMenu.innerHTML='<fieldset><legend>讲义语言</legend>'+[['both','中英对照'],['zh','中文'],['en','English']].map(([value,label])=>`<label><input type="radio" name="reading-language" value="${value}"><span>${label}</span></label>`).join('')+'</fieldset>';document.body.append(languageMenu);
   function syncReadingLanguage(){const value=window.AP_LEARNING.readingLanguage||'both';languageMenu.querySelector(`input[value="${value}"]`).checked=true;readingLanguage.querySelector('.m-language-value').textContent={both:isEnglish()?'Bilingual':'中英对照',zh:'中文',en:'English'}[value];}
   languageMenu.addEventListener('beforetoggle',e=>{if(e.newState==='open'){syncReadingLanguage();const r=readingLanguage.getBoundingClientRect();languageMenu.style.top=(r.bottom+8)+'px';languageMenu.style.right=Math.max(12,innerWidth-r.right)+'px';}});
@@ -70,7 +77,7 @@
   const oldHome=$('home');oldHome.hidden=true;
   const originalTop=document.querySelector('.topbar');originalTop.hidden=true;
   const account=$('btnUser');account.className='m-account';$('account-slot').append(account);account.title='账号';
-  const accountIcon=node('span','m-account-icon');accountIcon.innerHTML=icon('user');account.prepend(accountIcon);
+  account.style.setProperty('--account-icon',`url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${paths.user}"/></svg>`)}")`);
   const pages={};
   ['mod-learn','mod-bank','mod-wrong','mod-vocab','mod-stats','mod-rank','studyGuide','bookPractice'].forEach(id=>{const p=$(id);if(p){main.append(p);p.hidden=true;pages[id]=p;}});
   const courses=node('section','m-courses');courses.id='courses-page';main.prepend(courses);pages.courses=courses;
@@ -84,10 +91,10 @@
     const details=node('details','m-chapter');details.dataset.chapter=c.id;
     const summary=node('summary');summary.innerHTML=`<span class="m-number">${String(c.id).padStart(2,'0')}</span><span>${c.title.zh}</span>${icon('arrow')}`;
     details.append(summary);const items=node('div','m-chapter-items');
-    items.append(link('讲义',`#/learn/${c.id}/reading`,'m-chapter-reading'));
+    items.append(link('讲义',`#/unit/${c.id}/reading`,'m-chapter-reading'));
     const sub=node('div','m-reading-points');
-    (lessons[c.id]?.sections||[]).forEach((s,i)=>{const a=link(s.title.zh,`#/learn/${c.id}/reading`);a.dataset.reading=`reading-${c.id}-${i}`;sub.append(a);});
-    items.append(sub,link('例题',`#/learn/${c.id}/examples`),link('自测',`#/learn/${c.id}/checks`));details.append(items);directory.append(details);
+    (lessons[c.id]?.sections||[]).forEach(s=>{const a=link(s.title.zh,curriculum.href(s.id));a.dataset.reading=s.id;sub.append(a);});
+    items.append(sub,link('例题',unitHref(c.id,'examples')),link('自测',unitHref(c.id,'checks')));details.append(items);directory.append(details);
   });
   $('directory-slot').append(directory);
   const drawer=node('dialog','m-directory-dialog');drawer.id='directory-dialog';drawer.setAttribute('aria-label','课程目录');drawer.innerHTML=`<div class="m-dialog-heading"><h2>课程目录</h2><button class="m-icon-button" aria-label="关闭目录">${icon('close')}</button></div><div id="mobile-directory-slot"></div>`;document.body.append(drawer);
@@ -98,17 +105,16 @@
   drawer.querySelector('button').onclick=()=>drawer.close();drawer.addEventListener('close',()=>$('m-directory').setAttribute('aria-expanded','false'));
   drawer.addEventListener('click',e=>{if(e.target===drawer&&e.clientX>drawer.getBoundingClientRect().right)drawer.close();});
   $('m-settings').onclick=()=>$('btnSettings').click();
-  $('m-back').onclick=()=>{if(currentRoute.startsWith('/learn/'))go('/learn');else if(currentRoute.startsWith('/labs/'))go('/labs');else if(currentRoute.startsWith('/review/'))go('/review');else if(currentRoute==='/stats'||currentRoute==='/rank')go('/tools');else go('/learn');};
+  $('m-back').onclick=()=>{if(currentRoute.startsWith('/unit/'))go('/learn');else if(currentRoute.startsWith('/labs/'))go('/labs');else if(currentRoute.startsWith('/review/'))go('/review');else if(currentRoute==='/stats'||currentRoute==='/rank')go('/tools');else go('/learn');};
   function courseList(){
-    courses.replaceChildren();const heading=node('div','m-page-heading');heading.append(node('h1','','课程'),node('span','m-count',`${chapters.length} ${isEnglish()?"chapters":"章"}`));courses.append(heading);
-    if(last&&chapters.some(c=>c.id===Number(last.chapter))){const c=chapters.find(c=>c.id===Number(last.chapter));const resume=link('',`#/learn/${c.id}/${last.tab||'reading'}`,'m-resume');resume.innerHTML=`${icon('book')}<span><small>继续阅读</small><strong>${c.title[window.AP_LEARNING.language]}</strong></span>${icon('arrow')}`;courses.append(resume);}
+    courses.replaceChildren();const heading=node('div','m-page-heading');heading.append(node('h1','','课程'),node('span','m-count',`${chapters.length} ${isEnglish()?"units":"单元"}`));courses.append(heading);
+    if(curriculum.entries.has(reader.last)){const c=chapters.find(c=>c.id===curriculum.entries.get(reader.last).unit);const resume=link('',curriculum.href(reader.last),'m-resume');resume.innerHTML=`${icon('book')}<span><small>继续阅读</small><strong>${c.title[window.AP_LEARNING.language]}</strong></span>${icon('arrow')}`;courses.append(resume);}
     const search=node('label','m-search');search.innerHTML=`${icon('search')}<input type="search" aria-label="搜索课程" placeholder="搜索课程" autocomplete="off">`;courses.append(search);
-    const list=node('div','m-course-list');chapters.forEach(c=>{const a=link('',`#/learn/${c.id}/reading`,'m-course-row');a.dataset.search=`${c.title.zh} ${c.title.en}`.toLowerCase();const sections=lessons[c.id]?.sections||[];a.innerHTML=`<span class="m-course-number">${String(c.id).padStart(2,'0')}</span><span><strong>${c.title[window.AP_LEARNING.language]}</strong><small>${c.title[isEnglish()?"zh":"en"]}</small></span><span class="m-course-meta">${sections.length} ${isEnglish()?"sections":"节"}</span>${icon('arrow')}`;list.append(a);});courses.append(list);
+    const list=node('div','m-course-list');chapters.forEach(c=>{const a=link('',unitHref(c.id),'m-course-row');a.dataset.search=`${c.title.zh} ${c.title.en}`.toLowerCase();const sections=lessons[c.id]?.sections||[];a.innerHTML=`<span class="m-course-number">${String(c.id).padStart(2,'0')}</span><span><strong>${c.title[window.AP_LEARNING.language]}</strong><small>${c.title[isEnglish()?"zh":"en"]}</small></span><span class="m-course-meta">${sections.length} ${isEnglish()?"sections":"节"}</span>${icon('arrow')}`;list.append(a);});courses.append(list);
     const empty=node('p','m-empty','未找到课程');empty.hidden=true;courses.append(empty);search.querySelector('input').oninput=e=>{const value=e.target.value.trim().toLowerCase();let count=0;list.querySelectorAll('a').forEach(a=>{a.hidden=!a.dataset.search.includes(value);if(!a.hidden)count++;});empty.hidden=!!count;};
   }
   const labUnits=[...document.querySelectorAll('#learnContent .unit-panel')].map(p=>({id:p.id.replace('unit-',''),title:document.querySelector(`.unit-card[data-unit="${p.id.replace('unit-','')}"] h2`)?.textContent||p.id,panes:[...p.querySelectorAll('.tab[data-pane]')].map(a=>({id:a.dataset.pane,title:a.textContent}))}));
-  const unitNames=['Atomic structure','Bonding and structure','Intermolecular forces','Chemical reactions','Kinetics','Thermodynamics','Equilibrium','Acids and bases','Thermodynamics and electrochemistry'];
-  function unitTitle(unit){return isEnglish()?unitNames[labUnits.indexOf(unit)]:unit.title.replace(/^Unit\s*\d+\s*[·|]?\s*/,'');}
+  function unitTitle(unit){return chapters.find(c=>'u'+c.id===unit.id)?.title[window.AP_LEARNING.language]||unit.title;}
   function labList(){labs.replaceChildren(node('h1','','实验与知识点'));const list=node('div','m-lab-list');labUnits.forEach((unit,i)=>{const d=node('details','m-lab-unit'),s=node('summary');s.innerHTML=`<span class="m-course-number">${String(i+1).padStart(2,'0')}</span><strong>${unitTitle(unit)}</strong>${icon('arrow')}`;d.append(s);const links=node('div','m-lab-topics');unit.panes.forEach(p=>links.append(link(isEnglish()?(window.AP_TOPICS[p.id]?.[0]||p.title):p.title,`#/labs/${unit.id}/${p.id}`)));if(!unit.panes.length)links.append(link('打开单元',`#/labs/${unit.id}/${unit.id}`));d.append(links);list.append(d);});labs.append(list);}
   const toolEntries=[['公式与周期表','常用公式、符号与元素数据','btnFormula','tools',null],['课程大纲','AP 单元与知识点','btnPdf','book',null],['查缺补漏','按知识点检查掌握情况','btnGap','quiz',null],['翻译','单词与段落','btnTrans','translate',null],['学习统计','在线时长、做题数量与正确率',null,'chart','/stats'],['排行榜','做题数量排名与正确率',null,'trophy','/rank'],['学习设置','字号、题目呈现与数据备份','btnSettings','tools',null]];
   tools.append(node('h1','','工具'));const toolList=node('div','m-tool-list');toolEntries.forEach(([label,desc,target,i,route])=>{const b=node('button','m-tool-row');b.type='button';b.innerHTML=`${icon(i)}<span><strong>${label}</strong><small>${desc}</small></span>${icon('arrow')}`;b.onclick=()=>route?go(route):$(target).click();toolList.append(b);});tools.append(toolList);
@@ -119,26 +125,38 @@
   const moduleRoutes={home:'/learn',learn:'/labs',bank:'/practice',wrong:'/review',vocab:'/review/vocabulary'};
   window.__showModule=m=>rendering?legacyShow(m):go(moduleRoutes[m]||'/learn');
   window.__goChapter=(unit,pane)=>rendering?legacyChapter(unit,pane):go(`/labs/${unit}/${pane}`);
-  document.addEventListener('apchem:navigate',e=>{const d=e.detail;if(d.view==='guide')go(`/learn/${Number(d.chapter)||chapterId}/${d.tab||'reading'}`);if(d.view==='book')go('/book'+(d.section&&d.section!=='all'?'?section='+encodeURIComponent(d.section):''));});
+  document.addEventListener('apchem:navigate',e=>{const d=e.detail;if(d.view==='guide')go(unitHref(Number(d.chapter)||chapterId,d.tab||'reading').slice(1));if(d.view==='book')go('/book'+(d.section&&d.section!=='all'?'?section='+encodeURIComponent(d.section):''));});
   document.addEventListener('click',e=>{const tab=e.target.closest('#learnContent .tab[data-pane]');if(!tab||rendering)return;e.preventDefault();e.stopImmediatePropagation();go(`/labs/${tab.closest('.unit-panel').id.replace('unit-','')}/${tab.dataset.pane}`);},true);
   $('backDir').addEventListener('click',()=>go('/labs'));
-  directory.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;if(drawer.open)drawer.close();if(a.dataset.reading){e.preventDefault();if(location.hash!==a.hash)go(a.hash.slice(1));requestAnimationFrame(()=>{const target=$(a.dataset.reading);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});});}});
-  function remember(){if(currentRoute.startsWith('/learn/')&&guideTab==='reading'&&readingPoint){positions[chapterId]=readingPoint;save('apchem.reader.positions.v1',positions);}}
-  function syncDirectory(){directory.querySelectorAll('.m-chapter').forEach(d=>{const active=currentRoute.startsWith('/learn/')&&Number(d.dataset.chapter)===chapterId;d.classList.toggle('is-current',active);if(active)d.open=true;d.querySelector('.m-reading-points').hidden=!active||guideTab!=='reading';d.querySelectorAll('a').forEach(a=>a.setAttribute('aria-current',a.hash==='#'+currentRoute&&!a.dataset.reading?'page':'false'));});}
-  function updatePosition(){if(!currentRoute.startsWith('/learn/')||guideTab!=='reading')return;const sections=[...$('studyGuide').querySelectorAll('.study-teaching[id]')].filter(n=>!n.hidden);if(!sections.length)return;let active=sections[0];for(const section of sections)if(section.getBoundingClientRect().top<innerHeight*.4)active=section;readingPoint=active.id;directory.querySelectorAll('[data-reading]').forEach(a=>a.setAttribute('aria-current',a.dataset.reading===readingPoint?'location':'false'));}
+  directory.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;if(drawer.open)drawer.close();if(a.dataset.reading){e.preventDefault();go(a.hash.slice(1));}});
+  function remember(){if(currentRoute.startsWith('/unit/')&&guideTab==='reading'&&readingPoint){reader.positions[readingPoint]=Date.now();reader.last=readingPoint;save('apchem.reader.v2',reader);}}
+  function syncDirectory(){directory.querySelectorAll('.m-chapter').forEach(d=>{const active=currentRoute.startsWith('/unit/')&&Number(d.dataset.chapter)===chapterId;d.classList.toggle('is-current',active);if(active)d.open=true;d.querySelector('.m-reading-points').hidden=!active||guideTab!=='reading';d.querySelectorAll('a').forEach(a=>a.setAttribute('aria-current',active&&!a.dataset.reading&&((a.classList.contains('m-chapter-reading')&&guideTab==='reading')||a.hash.endsWith('/'+guideTab))?'page':'false'));});}
+  function updatePosition(){if(location.hash!==renderedHash||!currentRoute.startsWith('/unit/')||guideTab!=='reading')return;const sections=[...$('studyGuide').querySelectorAll('.study-teaching[id]')].filter(n=>!n.hidden);if(!sections.length)return;let active=sections[0];for(const section of sections)if(section.getBoundingClientRect().top<innerHeight*.4)active=section;if(readingPoint!==active.id){readingPoint=active.id;history.replaceState(null,'',curriculum.href(readingPoint));renderedHash=location.hash;}directory.querySelectorAll('[data-reading]').forEach(a=>a.setAttribute('aria-current',a.dataset.reading===readingPoint?'location':'false'));}
   let scrollFrame;window.addEventListener('scroll',()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(()=>{scrollFrame=null;updatePosition();});},{passive:true});window.addEventListener('pagehide',remember);
   function setPage(p){p.hidden=false;p.classList.add('m-active-page');}
   function render(){
     remember();window.AP_LEARNING.closePopups?.();if(drawer.open)drawer.close();
-    const hash=location.hash.slice(1)||'/learn',parts=hash.split('?'),route=parts[0],segments=route.split('/').filter(Boolean),query=new URLSearchParams(parts[1]||'');
-    if(!['learn','practice','book','review','labs','tools','stats','rank'].includes(segments[0])){history.replaceState(null,'','#/learn');return render();}
+    const hash=location.hash.slice(1)||'/learn',parts=hash.split('?'),query=new URLSearchParams(parts[1]||'');
+    let route=parts[0],segments=route.split('/').filter(Boolean),targetId='';
+    if(segments[0]==='learn'&&segments[1]){
+      const id=curriculum.legacy(segments[1],segments[2]||'reading');
+      history.replaceState(null,'',curriculum.href(id));return render();
+    }
+    if(['read','example','check'].includes(segments[0])){
+      const entry=curriculum.entries.get(segments[1]);
+      if(!entry||{read:'reading',example:'examples',check:'checks'}[segments[0]]!==entry.tab){history.replaceState(null,'','#/learn');return render();}
+      targetId=segments[1];route=`/unit/${entry.unit}/${entry.tab}`;segments=['unit',String(entry.unit),entry.tab];
+    }
+    readingPoint='';
+    if(!['learn','unit','practice','book','review','labs','tools','stats','rank'].includes(segments[0])){history.replaceState(null,'','#/learn');return render();}
     currentRoute=route;rendering=true;legacyShow('home');oldHome.hidden=true;
     Object.values(pages).forEach(p=>{p.hidden=true;p.classList.remove('m-active-page');});practiceNav.hidden=true;reviewNav.hidden=true;
     let title='课程',active=segments[0],focusTarget;
-    if(segments[0]==='learn'){
+    if(segments[0]==='learn'||segments[0]==='unit'){
+      active='learn';
       const found=chapters.find(c=>c.id===Number(segments[1]));
       if(!found){courseList();setPage(courses);focusTarget=courses.querySelector('h1');}
-      else{chapterId=found.id;guideTab=['reading','examples','checks'].includes(segments[2])?segments[2]:'reading';title=found.title[window.AP_LEARNING.language];last={chapter:chapterId,tab:guideTab};save('apchem.reader.last.v1',last);setPage(pages.studyGuide);window.AP_LEARNING.showGuide(chapterId,guideTab);focusTarget=pages.studyGuide.querySelector('h1,h2');}
+      else{chapterId=found.id;guideTab=['reading','examples','checks'].includes(segments[2])?segments[2]:'reading';title=found.title[window.AP_LEARNING.language];targetId=targetId||(guideTab==='reading'?curriculum.latest(reader,chapterId):curriculum.first(chapterId,guideTab));reader.last=targetId;save('apchem.reader.v2',reader);setPage(pages.studyGuide);window.AP_LEARNING.showGuide(chapterId,guideTab);focusTarget=pages.studyGuide.querySelector('h1,h2');}
     }else if(segments[0]==='practice'){
       title='练习';practiceNav.hidden=false;main.insertBefore(practiceNav,pages['mod-bank']);legacyShow('bank');setPage(pages['mod-bank']);
     }else if(segments[0]==='book'){
@@ -151,11 +169,11 @@
     else if(segments[0]==='stats'){title='学习统计';active='tools';legacyShow('stats');setPage(pages['mod-stats']);}
     else if(segments[0]==='rank'){title='排行榜';active='tools';legacyShow('rank');setPage(pages['mod-rank']);}
     title=isEnglish()?(uiText.get(title)||title):title;$('m-location').textContent=title;$('m-back').hidden=route==='/learn';document.title=`${title} · AP Chemistry`;
-    document.documentElement.dataset.view=active;readingLanguage.hidden=!route.startsWith('/learn/');syncReadingLanguage();
+    document.documentElement.dataset.view=active;readingLanguage.hidden=!route.startsWith('/unit/');syncReadingLanguage();
     document.querySelectorAll('[data-route-nav]').forEach(a=>{const selected=a.dataset.routeNav===active;a.setAttribute('aria-current',selected?'page':'false');});
     [...practiceNav.children,...reviewNav.children].forEach(a=>a.setAttribute('aria-current',a.hash==='#'+route?'page':'false'));
-    syncShellLanguage();syncDirectory();rendering=false;window.scrollTo(0,0);if(focusTarget){focusTarget.tabIndex=-1;focusTarget.focus({preventScroll:true});}
-    if(route.startsWith('/learn/')&&guideTab==='reading'){requestAnimationFrame(()=>{const saved=$(positions[chapterId]);if(saved)saved.scrollIntoView({block:'start'});updatePosition();});}
+    syncShellLanguage();syncDirectory();rendering=false;renderedHash=location.hash;window.scrollTo(0,0);if(focusTarget){focusTarget.tabIndex=-1;focusTarget.focus({preventScroll:true});}
+    if(route.startsWith('/unit/')){requestAnimationFrame(()=>{const target=$(targetId);if(target)target.scrollIntoView({block:'start'});updatePosition();});}
   }
   function syncShellLanguage(){
     const lang=window.AP_LEARNING.language;
