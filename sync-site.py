@@ -80,7 +80,12 @@ TAIL = '''
 
 io.open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8', newline='').write(HEAD + BODY + TAIL)
 io.open(os.path.join(SITE, 'assets', 'style.css'), 'w', encoding='utf-8', newline='').write(CSS)
-io.open(os.path.join(SITE, 'assets', 'app.js'), 'w', encoding='utf-8', newline='').write(JS)
+if '--skip-app' in sys.argv:
+    # Only meaningful when the application script itself did not change.
+    print('app.js      skipped (--skip-app)')
+else:
+    io.open(os.path.join(SITE, 'assets', 'app.js'), 'w', encoding='utf-8', newline='').write(JS)
+    print('app.js      %.1f KB' % (len(JS.encode('utf-8')) / 1024))
 
 print('index.html  %.1f KB' % (len((HEAD + BODY + TAIL).encode('utf-8')) / 1024))
 print('style.css   %.1f KB' % (len(CSS.encode('utf-8')) / 1024))

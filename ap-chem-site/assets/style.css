@@ -1992,3 +1992,2689 @@ input[type=color]{width:36px;height:27px;border:1px solid var(--line);border-rad
 .rank-table tr.top3 td{color:#e8b98a;font-weight:700}
 .rank-note{text-align:center;font-size:12px;color:var(--muted,#8fa4d6);margin-top:14px}
 .rank-loading{text-align:center;color:var(--muted,#8fa4d6);padding:24px}
+
+
+
+
+
+
+
+/* ===== AP_LEWIS_INTEGRATION:BEGIN : styles ===== */
+/* The workshop keeps its own design tokens; they live on .lewis-studio so
+   nothing leaks into the host, and they are bridged to the host palette below. */
+/* ============================================================
+   Lewis Studio — visual system
+   ============================================================ */
+.lewis-studio {
+  --bg: #f0ede4;
+  --bg-deep: #e8e3d7;
+  --surface: #fcfbf7;
+  --surface-soft: #f6f3eb;
+  --surface-tint: #f2f6f1;
+  --ink: #17352f;
+  --ink-soft: #38544c;
+  --muted: #74847c;
+  --faint: #9caaa2;
+  --line: #deddd2;
+  --line-strong: #c9ccc0;
+  --green: #1e5a49;
+  --green-2: #2d7562;
+  --green-soft: #e8f0ea;
+  --orange: #d55b37;
+  --orange-deep: #b74728;
+  --orange-soft: #f8e8df;
+  --gold: #bd9653;
+  --danger: #b6422a;
+  --danger-soft: #fbe9e2;
+  --bond: #294b43;
+  --radius-xl: 28px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --shadow-card: 0 18px 48px rgba(34, 51, 44, 0.075), 0 2px 6px rgba(34, 51, 44, 0.025);
+  --shadow-float: 0 24px 60px rgba(30, 49, 42, 0.13);
+  --sans: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Songti SC", "STSong", "SimSun", Georgia, serif;
+  --mono: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  color-scheme: light;
+}
+.lewis-studio, .lewis-studio * { box-sizing: border-box; }
+.lewis-studio [hidden] { display: none !important; }
+.lewis-studio { min-width: 320px; scroll-behavior: smooth; }
+.lewis-studio {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--sans);
+  background:
+    radial-gradient(ellipse 52rem 34rem at 7% -8%, rgba(214, 91, 55, 0.105), transparent 64%),
+    radial-gradient(ellipse 50rem 38rem at 102% 16%, rgba(46, 117, 98, 0.10), transparent 64%),
+    linear-gradient(135deg, rgba(255,255,255,0.42), transparent 40%),
+    var(--bg);
+  overflow-x: hidden;
+}
+.lewis-studio ::selection, .lewis-studio::selection { color: var(--surface); background: var(--green-2); }
+.lewis-studio::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.38;
+  background-image: radial-gradient(rgba(31, 78, 66, 0.12) 0.7px, transparent 0.7px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black, transparent 42%);
+  z-index: 0;
+}
+.lewis-studio button,
+.lewis-studio input { font: inherit; }
+.lewis-studio button { color: inherit; }
+.lewis-studio button,
+.lewis-studio a { -webkit-tap-highlight-color: transparent; }
+.lewis-studio a { color: inherit; text-decoration: none; }
+.lewis-studio svg { display: block; }
+.lewis-studio .skip-link {
+  position: fixed;
+  left: 16px;
+  top: -70px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--surface);
+  transition: top 160ms ease;
+}
+.lewis-studio .skip-link:focus { top: 16px; }
+.lewis-studio .shell {
+  position: relative;
+  z-index: 1;
+  width: min(1460px, 100%);
+  margin: 0 auto;
+  padding: 0 30px 30px;
+}
+/* ---------------- top bar ---------------- */
+.lewis-studio .topbar {
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(78, 97, 87, 0.14);
+}
+.lewis-studio .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  border-radius: 14px;
+  outline-offset: 5px;
+}
+.lewis-studio .brand-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(29, 83, 68, 0.30);
+  border-radius: 15px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.lewis-studio .brand-mark svg { width: 27px; height: 27px; }
+.lewis-studio .brand-type {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 7px;
+  align-items: baseline;
+  line-height: 1;
+}
+.lewis-studio .brand-type strong {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+.lewis-studio .brand-type .brand-dot {
+  color: var(--orange);
+  font-size: 21px;
+  transform: translateY(-1px);
+}
+.lewis-studio .brand-type small {
+  grid-column: 1 / -1;
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lewis-studio .top-meta {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.lewis-studio .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(49, 100, 82, 0.18);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--lw-1);
+  background: color-mix(in srgb, var(--surface) 54%, transparent);
+  white-space: nowrap;
+}
+.lewis-studio .status-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lw-2);
+  box-shadow: 0 0 0 4px rgba(92, 149, 114, 0.12);
+}
+.lewis-studio .top-note {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.lewis-studio .top-rule { width: 42px; height: 1px; background: var(--line-strong); }
+/* ---------------- main grid ---------------- */
+.lewis-studio .main {
+  display: grid;
+  grid-template-columns: minmax(338px, 390px) minmax(0, 1fr);
+  gap: 26px;
+  align-items: start;
+  padding-top: 28px;
+}
+.lewis-studio .left-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+  min-width: 0;
+}
+.lewis-studio .viewer { min-width: 0; display: flex; flex-direction: column; gap: 19px; }
+/* ---------------- hero ---------------- */
+.lewis-studio .hero { padding: 8px 2px 2px; }
+.lewis-studio .eyebrow {
+  margin: 0 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--lw-3);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.lewis-studio .eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  max-width: 44px;
+  background: rgba(162, 130, 108, 0.42);
+}
+.lewis-studio .hero h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(39px, 3.6vw, 52px);
+  font-weight: 650;
+  line-height: 1.12;
+  letter-spacing: -0.055em;
+}
+.lewis-studio .hero h1 em {
+  display: inline-block;
+  color: var(--orange);
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.lewis-studio .lede {
+  max-width: 34em;
+  margin: 18px 0 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.85;
+}
+.lewis-studio .lede .dash {
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  margin: 0 8px 4px 0;
+  background: var(--orange);
+  opacity: 0.65;
+}
+.lewis-studio .hero-facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 19px;
+}
+.lewis-studio .fact {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--lw-4);
+  border: 1px solid rgba(91, 113, 101, 0.2);
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+/* ---------------- build card ---------------- */
+.lewis-studio .build-card {
+  position: relative;
+  overflow: hidden;
+  padding: 21px;
+  border: 1px solid rgba(101, 112, 103, 0.18);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  box-shadow: var(--shadow-card);
+}
+.lewis-studio .build-card::after {
+  content: "";
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  top: -90px;
+  right: -70px;
+  border-radius: 50%;
+  border: 1px solid rgba(211, 92, 57, 0.10);
+  box-shadow: 0 0 0 22px rgba(211, 92, 57, 0.035), 0 0 0 45px rgba(211, 92, 57, 0.02);
+  pointer-events: none;
+}
+.lewis-studio .form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+.lewis-studio .form-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.lewis-studio .form-label .num {
+  font-family: var(--mono);
+  color: var(--orange);
+  font-size: 9.5px;
+  font-weight: 500;
+}
+.lewis-studio .kbd-hint {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.lewis-studio .input-row { display: flex; gap: 8px; align-items: stretch; }
+.lewis-studio .input-shell {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--line);
+  border-radius: 13px;
+  background: var(--lw-5);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+.lewis-studio .input-shell::before {
+  content: "ƒ";
+  width: 34px;
+  flex: none;
+  text-align: center;
+  color: rgba(45, 117, 98, 0.5);
+  font-family: var(--serif);
+  font-size: 19px;
+  font-style: italic;
+  border-right: 1px solid rgba(120, 133, 121, 0.16);
+  line-height: 1;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+}
+.lewis-studio .input-shell:focus-within {
+  border-color: rgba(45, 117, 98, 0.70);
+  box-shadow: 0 0 0 4px rgba(45, 117, 98, 0.09);
+  background: var(--lw-6);
+}
+.lewis-studio .input-shell.is-error {
+  border-color: rgba(182, 66, 42, 0.64);
+  box-shadow: 0 0 0 4px rgba(182, 66, 42, 0.075);
+  animation: lewis-nudge 240ms ease;
+}
+.lewis-studio #formulaInput {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  padding: 16px 10px 16px 13px;
+  font-family: var(--mono);
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: 0.015em;
+}
+.lewis-studio #formulaInput::placeholder { color: var(--lw-7); font-size: 14px; letter-spacing: 0; }
+.lewis-studio .draw-button {
+  flex: none;
+  appearance: none;
+  border: 0;
+  border-radius: 13px;
+  min-height: 54px;
+  padding: 0 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--green);
+  color: var(--lw-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(28, 82, 67, 0.17);
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+.lewis-studio .draw-button svg { width: 15px; height: 15px; }
+.lewis-studio .draw-button:hover { background: var(--lw-9); box-shadow: 0 10px 26px rgba(28, 82, 67, 0.24); transform: translateY(-1px); }
+.lewis-studio .draw-button:active { transform: translateY(0); box-shadow: 0 4px 14px rgba(28, 82, 67, 0.16); }
+.lewis-studio .draw-button:focus-visible,
+.lewis-studio .icon-button:focus-visible,
+.lewis-studio .example-chip:focus-visible,
+.lewis-studio .brand:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+.lewis-studio .example-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 15px;
+}
+.lewis-studio .mini-label {
+  margin-right: 2px;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.lewis-studio .example-chip {
+  appearance: none;
+  border: 1px solid rgba(110, 126, 115, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lw-10);
+  padding: 6px 8px 5px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+.lewis-studio .example-chip:hover { color: var(--green); border-color: rgba(45, 117, 98, 0.4); background: var(--green-soft); }
+.lewis-studio .example-chip sup { font-size: 0.72em; }
+.lewis-studio .example-chip sub { font-size: 0.72em; }
+.lewis-studio .syntax-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px dashed rgba(106, 122, 110, 0.19);
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+.lewis-studio .syntax-line svg { flex: none; width: 13px; height: 13px; margin-top: 1px; color: var(--gold); }
+.lewis-studio .syntax-line code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--lw-11);
+  font-family: var(--mono);
+  font-size: 9.5px;
+}
+.lewis-studio .form-error {
+  margin-top: 13px;
+  padding: 12px 13px;
+  border: 1px solid rgba(182, 66, 42, 0.18);
+  border-left: 3px solid var(--danger);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 66%, transparent);
+  color: var(--lw-12);
+}
+.lewis-studio .form-error[hidden] { display: none; }
+.lewis-studio .form-error .err-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 650;
+}
+.lewis-studio .form-error .err-top svg { width: 14px; height: 14px; flex: none; }
+.lewis-studio .form-error p { margin: 0; font-size: 11px; line-height: 1.65; }
+.lewis-studio .form-error .err-hint { margin-top: 6px; color: var(--lw-13); font-size: 10.5px; }
+.lewis-studio .build-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 13px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.07em;
+}
+.lewis-studio .library-count { color: var(--lw-14); }
+/* ---------------- method card ---------------- */
+.lewis-studio .method-card {
+  padding: 19px 20px 18px;
+  border: 1px solid rgba(99, 114, 103, 0.16);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.lewis-studio .method-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+.lewis-studio .method-head small {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+.lewis-studio .method-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(106, 122, 110, 0.12);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.lewis-studio .method-row:first-of-type { border-top: 0; padding-top: 0; }
+.lewis-studio .method-row code {
+  color: var(--lw-15);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+.lewis-studio .method-note {
+  margin: 13px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(106, 122, 110, 0.18);
+  color: var(--lw-16);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.lewis-studio .method-note strong { color: var(--lw-17); font-weight: 650; }
+.lewis-studio .method-card details {
+  margin-top: 12px;
+  font-size: 10px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.lewis-studio .method-card summary {
+  cursor: pointer;
+  color: var(--lw-18);
+  font-size: 10px;
+  font-weight: 650;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lewis-studio .method-card summary::-webkit-details-marker { display: none; }
+.lewis-studio .method-card summary::after {
+  content: "+";
+  margin-left: auto;
+  font-family: var(--mono);
+  color: var(--faint);
+}
+.lewis-studio .method-card details[open] summary::after { content: "−"; }
+.lewis-studio .method-card details p { margin: 8px 0 0; }
+/* ---------------- canvas ---------------- */
+.lewis-studio .canvas-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: clamp(500px, calc(100vh - 320px), 720px);
+  overflow: hidden;
+  border: 1px solid rgba(92, 108, 97, 0.20);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.lewis-studio .canvas-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px 0;
+}
+.lewis-studio .canvas-head .eyebrow {
+  margin-bottom: 9px;
+  color: var(--faint);
+  font-size: 8.5px;
+}
+.lewis-studio .canvas-head .eyebrow::after { display: none; }
+.lewis-studio .mol-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.lewis-studio .mol-line h2 {
+  margin: 0;
+  max-width: 100%;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(25px, 2.2vw, 33px);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.lewis-studio .mol-formula {
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.lewis-studio .mol-formula sub { font-size: 0.68em; vertical-align: -0.32em; }
+.lewis-studio .mol-formula sup { font-size: 0.68em; vertical-align: 0.6em; }
+.lewis-studio .type-badge {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid rgba(57, 111, 92, 0.18);
+  border-radius: 5px;
+  color: var(--lw-19);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  white-space: nowrap;
+}
+.lewis-studio .type-badge::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--green-2);
+}
+.lewis-studio .type-badge.is-derived { color: var(--lw-20); border-color: rgba(181, 135, 75, 0.22); background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.lewis-studio .type-badge.is-derived::before { background: var(--gold); }
+.lewis-studio .canvas-subline {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+.lewis-studio .toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding-top: 2px;
+}
+.lewis-studio .zoom-box {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  border: 1px solid rgba(100, 115, 104, 0.20);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  overflow: hidden;
+}
+.lewis-studio .icon-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--lw-21);
+  width: 31px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.lewis-studio .icon-button:hover { background: var(--green-soft); color: var(--green); }
+.lewis-studio .icon-button:disabled { opacity: 0.34; cursor: default; background: transparent; }
+.lewis-studio .icon-button svg { width: 14px; height: 14px; }
+.lewis-studio .zoom-value {
+  min-width: 38px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--muted);
+  user-select: none;
+}
+.lewis-studio .zoom-divider { width: 1px; height: 14px; background: rgba(100, 115, 104, 0.18); }
+.lewis-studio .toolbar-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(100, 115, 104, 0.20);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--lw-21);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.lewis-studio .toolbar-button:hover { background: var(--green-soft); color: var(--green); border-color: rgba(45, 117, 98, 0.25); }
+.lewis-studio .toolbar-button:disabled { opacity: 0.36; cursor: default; }
+.lewis-studio .toolbar-button svg { width: 13px; height: 13px; }
+.lewis-studio .stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 15px 16px 0;
+  overflow: hidden;
+  border: 1px solid rgba(109, 123, 111, 0.15);
+  border-radius: 19px;
+  background-color: var(--lw-stage);
+  background-image:
+    radial-gradient(rgba(70, 95, 82, 0.16) 0.75px, transparent 0.8px),
+    radial-gradient(ellipse at 50% 48%, rgba(255,255,255,0.9), rgba(248,246,238,0.25) 72%);
+  background-size: 20px 20px, 100% 100%;
+  background-position: 0 0, center;
+  isolation: isolate;
+}
+.lewis-studio .stage::before,
+.lewis-studio .stage::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+}
+.lewis-studio .stage::before {
+  top: 13px;
+  left: 13px;
+  border-top: 1px solid var(--lw-22);
+  border-left: 1px solid var(--lw-22);
+}
+.lewis-studio .stage::after {
+  right: 13px;
+  bottom: 13px;
+  border-right: 1px solid var(--lw-22);
+  border-bottom: 1px solid var(--lw-22);
+}
+.lewis-studio #structureSvg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 380ms ease;
+}
+.lewis-studio #structureSvg.is-visible { opacity: 1; }
+.lewis-studio #structureSvg.is-revealing { animation: lewis-inkReveal 500ms cubic-bezier(.2,.7,.2,1) both; }
+.lewis-studio .stage-label {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--lw-23);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.lewis-studio .stage-label.top-left { top: 16px; left: 36px; }
+.lewis-studio .stage-label.top-left::before {
+  content: "";
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--lw-24);
+}
+.lewis-studio .stage-label.bottom-right { right: 34px; bottom: 15px; }
+.lewis-studio .stage-label .live { color: var(--lw-25); }
+.lewis-studio .empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 30px;
+  text-align: center;
+}
+.lewis-studio .empty-state[hidden] { display: none; }
+.lewis-studio .empty-orbit { width: 104px; height: 104px; opacity: 0.55; }
+.lewis-studio .empty-state h3 { margin: 3px 0 0; font-family: var(--serif); font-size: 21px; font-weight: 600; color: var(--lw-26); }
+.lewis-studio .empty-state p { margin: 0; color: var(--lw-27); font-size: 11px; line-height: 1.7; }
+.lewis-studio .error-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 34px 44px;
+  text-align: center;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(3px);
+}
+.lewis-studio .error-stage[hidden] { display: none; }
+.lewis-studio .error-mark {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(182, 66, 42, 0.22);
+  border-radius: 50%;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  margin-bottom: 15px;
+}
+.lewis-studio .error-mark svg { width: 20px; height: 20px; }
+.lewis-studio .error-stage h3 {
+  margin: 0 0 7px;
+  color: var(--lw-28);
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+}
+.lewis-studio .error-stage p { max-width: 49ch; margin: 0; color: var(--lw-29); font-size: 11.5px; line-height: 1.8; }
+.lewis-studio .error-stage .hint {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(155, 103, 85, 0.25);
+  color: var(--lw-30);
+  font-size: 10.5px;
+}
+.lewis-studio .canvas-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 56px;
+  padding: 11px 23px 13px;
+}
+.lewis-studio .legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 13px;
+  color: var(--lw-31);
+  font-size: 9px;
+}
+.lewis-studio .legend-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.lewis-studio .legend-line { display: inline-block; width: 17px; height: 2px; background: var(--bond); border-radius: 2px; }
+.lewis-studio .legend-line.double { height: 5px; border-top: 2px solid var(--bond); border-bottom: 2px solid var(--bond); background: transparent; }
+.lewis-studio .legend-line.triple { height: 7px; border-top: 1.7px solid var(--bond); border-bottom: 1.7px solid var(--bond); background: var(--bond); background-clip: content-box; padding: 1.5px 0; }
+.lewis-studio .legend-dots { display: inline-flex; gap: 2px; align-items: center; }
+.lewis-studio .legend-dots i { width: 3px; height: 3px; border-radius: 50%; background: var(--orange); display: inline-block; }
+.lewis-studio .legend-charge {
+  width: 13px;
+  height: 13px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(181, 72, 43, 0.55);
+  border-radius: 50%;
+  font-family: var(--sans);
+  font-size: 9px;
+  color: var(--orange);
+  font-weight: 700;
+  line-height: 1;
+  background: var(--lw-stage);
+}
+.lewis-studio .geometry-text {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  color: var(--lw-32);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+.lewis-studio .geometry-text::before {
+  content: "VSEPR";
+  color: var(--lw-33);
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  padding: 3px 5px;
+  border: 1px solid rgba(109, 126, 112, 0.17);
+  border-radius: 4px;
+}
+.lewis-studio .geometry-text.is-empty::before { display: none; }
+/* ---------------- insight cards ---------------- */
+.lewis-studio .insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1.01fr) minmax(0, 0.95fr) minmax(0, 1.24fr);
+  gap: 14px;
+}
+.lewis-studio .stat-card {
+  min-width: 0;
+  padding: 16px 17px;
+  border: 1px solid rgba(92, 109, 98, 0.17);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  box-shadow: 0 8px 30px rgba(41, 58, 49, 0.035);
+}
+.lewis-studio .stat-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.lewis-studio .stat-head h3 {
+  margin: 0;
+  color: var(--lw-34);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.lewis-studio .stat-head small {
+  overflow: hidden;
+  color: var(--lw-35);
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.lewis-studio .ledger-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+.lewis-studio .big-number {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+.lewis-studio .big-number .unit {
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.lewis-studio .ledger-caption {
+  padding-bottom: 2px;
+  color: var(--lw-36);
+  font-size: 9.5px;
+  line-height: 1.45;
+  text-align: right;
+}
+.lewis-studio .ledger-caption b { display: block; color: var(--lw-37); font-weight: 600; font-size: 10px; }
+.lewis-studio .electron-bar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--lw-38);
+}
+.lewis-studio .electron-segment { min-width: 2px; height: 100%; border-radius: 2px; transition: width 500ms cubic-bezier(.2,.7,.2,1); }
+.lewis-studio .electron-segment.bonding { background: var(--green-2); }
+.lewis-studio .electron-segment.lone { background: var(--orange); }
+.lewis-studio .electron-segment.radical { background: var(--gold); }
+.lewis-studio .electron-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 11px;
+  margin-top: 11px;
+  color: var(--lw-39);
+  font-size: 9px;
+}
+.lewis-studio .electron-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.lewis-studio .electron-legend b { color: var(--lw-40); font-family: var(--mono); font-size: 9px; font-weight: 500; }
+.lewis-studio .dot-key { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+.lewis-studio .dot-key.bonding { background: var(--green-2); }
+.lewis-studio .dot-key.lone { background: var(--orange); }
+.lewis-studio .dot-key.radical { background: var(--gold); }
+.lewis-studio .ledger-foot {
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px dashed rgba(108, 124, 111, 0.18);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  color: var(--lw-23);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+.lewis-studio .charge-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  color: var(--lw-41);
+  font-size: 10.5px;
+}
+.lewis-studio .charge-summary .net {
+  display: inline-grid;
+  place-items: center;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 5px;
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--orange-deep);
+  background: var(--orange-soft);
+  border: 1px solid rgba(190, 83, 48, 0.15);
+}
+.lewis-studio .charge-summary.is-neutral .net {
+  color: var(--green);
+  background: var(--green-soft);
+  border-color: rgba(53, 118, 90, 0.14);
+}
+.lewis-studio .charge-summary .check {
+  width: 15px;
+  height: 15px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--green-2);
+}
+.lewis-studio .charge-summary .check svg { width: 13px; height: 13px; }
+.lewis-studio .charge-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lewis-studio .charge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(195, 132, 103, 0.22);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 54%, transparent);
+  color: var(--lw-42);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+.lewis-studio .charge-chip b { font-weight: 600; color: var(--lw-43); }
+.lewis-studio .charge-chip .times { color: var(--lw-44); }
+.lewis-studio .charge-empty-note {
+  color: var(--lw-45);
+  font-size: 9.5px;
+  line-height: 1.55;
+}
+.lewis-studio .charge-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed rgba(108, 124, 111, 0.18);
+  color: var(--lw-23);
+  font-family: var(--mono);
+  font-size: 8px;
+}
+.lewis-studio .charge-mini b { color: var(--lw-46); font-weight: 500; }
+.lewis-studio .note-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.lewis-studio .note-tag {
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(88, 116, 101, 0.16);
+  color: var(--lw-47);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.03em;
+}
+.lewis-studio .note-tag.resonance { color: var(--lw-48); border-color: rgba(170, 130, 74, 0.2); background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.lewis-studio .note-tag.radical { color: var(--lw-49); border-color: rgba(180, 106, 75, 0.18); background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.lewis-studio .note-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  margin: 0;
+  color: var(--lw-50);
+  font-size: 10px;
+  line-height: 1.75;
+}
+.lewis-studio .note-text.is-placeholder { color: var(--lw-51); }
+.lewis-studio .note-geometry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(108, 124, 111, 0.17);
+  overflow: hidden;
+  color: var(--lw-52);
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.lewis-studio .note-geometry::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.lewis-studio .note-source {
+  margin-left: auto;
+  color: var(--lw-53);
+  font-family: var(--mono);
+  font-size: 7.5px;
+  white-space: nowrap;
+}
+/* ---------------- footer / toast ---------------- */
+.lewis-studio .page-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 2px 4px;
+  color: var(--lw-54);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.075em;
+}
+.lewis-studio .page-foot .sep { color: var(--lw-55); }
+.lewis-studio .page-foot a { border-bottom: 1px dotted rgba(109, 128, 116, 0.35); }
+.lewis-studio .page-foot a:hover { color: var(--green); }
+.lewis-studio .toast {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: 26px;
+  transform: translate(-50%, 14px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(90vw, 420px);
+  padding: 10px 14px;
+  border: 1px solid rgba(39, 81, 68, 0.22);
+  border-radius: 10px;
+  background: rgba(24, 52, 46, 0.94);
+  color: var(--lw-56);
+  box-shadow: var(--shadow-float);
+  font-size: 10.5px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.lewis-studio .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.lewis-studio .toast svg { width: 13px; height: 13px; color: var(--lw-57); }
+/* ---------------- motion ---------------- */
+@keyframes lewis-riseIn{
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes lewis-inkReveal{
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes lewis-nudge{
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-3px); }
+  65% { transform: translateX(3px); }
+}
+.lewis-studio .hero { animation: lewis-riseIn 520ms both; }
+.lewis-studio .build-card { animation: lewis-riseIn 560ms 45ms both; }
+.lewis-studio .method-card { animation: lewis-riseIn 620ms 95ms both; }
+.lewis-studio .canvas-card { animation: lewis-riseIn 600ms 60ms both; }
+.lewis-studio .insights .stat-card:nth-child(1) { animation: lewis-riseIn 640ms 120ms both; }
+.lewis-studio .insights .stat-card:nth-child(2) { animation: lewis-riseIn 640ms 160ms both; }
+.lewis-studio .insights .stat-card:nth-child(3) { animation: lewis-riseIn 640ms 200ms both; }
+@media (prefers-reduced-motion: reduce){
+.lewis-studio, .lewis-studio *,
+.lewis-studio *::before,
+.lewis-studio *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+
+}
+/* ---------------- responsive ---------------- */
+@media (max-width: 1180px){
+.lewis-studio .shell { padding-left: 22px; padding-right: 22px; }
+.lewis-studio .main { grid-template-columns: minmax(310px, 340px) minmax(0, 1fr); gap: 21px; }
+.lewis-studio .hero h1 { font-size: 42px; }
+.lewis-studio .canvas-card { height: clamp(470px, calc(100vh - 330px), 660px); }
+.lewis-studio .insights { grid-template-columns: 1fr 1fr; }
+.lewis-studio .stat-card:nth-child(3) { grid-column: 1 / -1; }
+.lewis-studio .note-text { -webkit-line-clamp: 2; }
+.lewis-studio .top-note { display: none; }
+
+
+}
+@media (max-width: 930px){
+.lewis-studio .shell { padding-left: 20px; padding-right: 20px; }
+.lewis-studio .topbar { height: 74px; }
+.lewis-studio .main { grid-template-columns: 1fr; padding-top: 23px; }
+.lewis-studio .left-rail { display: grid; grid-template-columns: 1fr 1.1fr; align-items: start; gap: 20px; }
+.lewis-studio .hero { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; column-gap: 22px; }
+.lewis-studio .hero .eyebrow,
+.lewis-studio .hero h1,
+.lewis-studio .hero .lede { grid-column: 1; }
+.lewis-studio .hero-facts { grid-column: 2; grid-row: 2 / 4; align-self: end; justify-content: flex-end; max-width: 190px; }
+.lewis-studio .build-card { grid-column: 2; }
+.lewis-studio .method-card { grid-column: 1; grid-row: 2; }
+.lewis-studio .canvas-card { height: min(70vh, 610px); min-height: 430px; }
+.lewis-studio .insights { grid-template-columns: 1fr 1fr; }
+.lewis-studio .stat-card:nth-child(3) { grid-column: 1 / -1; }
+
+
+}
+@media (max-width: 680px){
+.lewis-studio .shell { padding: 0 14px 22px; }
+.lewis-studio .topbar { height: 68px; gap: 12px; }
+.lewis-studio .brand-mark { width: 40px; height: 40px; border-radius: 13px; }
+.lewis-studio .brand-mark svg { width: 23px; height: 23px; }
+.lewis-studio .brand-type strong { font-size: 21px; }
+.lewis-studio .brand-type small { font-size: 8px; }
+.lewis-studio .top-meta { gap: 8px; }
+.lewis-studio .status-pill { font-size: 9px; padding: 6px 9px; }
+.lewis-studio .main { gap: 17px; padding-top: 18px; }
+.lewis-studio .left-rail { display: flex; flex-direction: column; gap: 16px; }
+.lewis-studio .hero { display: block; }
+.lewis-studio .hero h1 { font-size: 38px; }
+.lewis-studio .hero-facts { justify-content: flex-start; max-width: none; margin-top: 14px; }
+.lewis-studio .build-card { padding: 17px; }
+.lewis-studio .input-row { flex-direction: column; gap: 8px; }
+.lewis-studio .draw-button { min-height: 46px; width: 100%; }
+.lewis-studio #formulaInput { font-size: 17px; padding: 15px 10px; }
+.lewis-studio .form-head { margin-bottom: 9px; }
+.lewis-studio .method-card { order: 4; }
+.lewis-studio .canvas-card { height: auto; min-height: 450px; }
+.lewis-studio .canvas-head { padding: 17px 16px 0; flex-direction: column; gap: 11px; }
+.lewis-studio .canvas-head .toolbar { align-self: stretch; justify-content: space-between; }
+.lewis-studio .toolbar .toolbar-button { margin-left: auto; }
+.lewis-studio .stage { margin: 12px 10px 0; min-height: 330px; }
+.lewis-studio .canvas-foot { align-items: flex-start; flex-direction: column; gap: 9px; padding: 10px 16px 14px; }
+.lewis-studio .geometry-text { justify-content: flex-start; text-align: left; }
+.lewis-studio .insights { grid-template-columns: 1fr; gap: 10px; }
+.lewis-studio .stat-card:nth-child(3) { grid-column: auto; }
+.lewis-studio .note-text { -webkit-line-clamp: 3; }
+.lewis-studio .page-foot { flex-direction: column; align-items: flex-start; gap: 7px; padding-top: 16px; }
+.lewis-studio .error-stage { padding: 26px 22px; }
+
+
+}
+@media (max-width: 400px){
+.lewis-studio .brand-type small { display: none; }
+.lewis-studio .status-pill { font-size: 8px; }
+.lewis-studio .top-meta { gap: 0; }
+.lewis-studio .hero h1 { font-size: 34px; }
+.lewis-studio .form-head .kbd-hint { display: none; }
+.lewis-studio .example-row { gap: 5px; }
+.lewis-studio .stat-card { padding: 14px; }
+.lewis-studio .canvas-card { min-height: 420px; }
+
+
+}
+
+
+  
+/* ---- 主题桥接：跟随主界面的深浅色与色系 ---- */
+.lewis-studio {
+  --bg: var(--md-sys-color-surface-container, #f0ede4);
+  --bg-deep: var(--md-sys-color-surface-container-high, #e8e3d7);
+  --surface: var(--md-sys-color-surface-container-lowest, #fcfbf7);
+  --surface-soft: var(--md-sys-color-surface-container-low, #f6f3eb);
+  --surface-tint: var(--md-sys-color-surface-container-low, #f2f6f1);
+  --ink: var(--md-sys-color-on-surface, #17352f);
+  --ink-soft: var(--md-sys-color-on-surface-variant, #38544c);
+  --muted: var(--md-sys-color-on-surface-variant, #74847c);
+  --faint: var(--md-sys-color-outline, #9caaa2);
+  --line: var(--md-sys-color-outline-variant, #deddd2);
+  --line-strong: var(--md-sys-color-outline, #c9ccc0);
+  --green: var(--md-sys-color-primary, #1e5a49);
+  --green-2: var(--md-sys-color-primary, #2d7562);
+  --green-soft: var(--md-sys-color-primary-container, #e8f0ea);
+  --danger: var(--md-sys-color-error, #b6422a);
+  --danger-soft: var(--md-sys-color-error-container, #fbe9e2);
+  --gold: var(--md-sys-color-tertiary, #bd9653);
+  --bond: var(--md-sys-color-on-surface, #294b43);
+  --lw-stage: var(--md-sys-color-surface-container-lowest, #fbfaf6);
+  --orange: #d55b37;
+  --orange-deep: #b74728;
+  --orange-soft: #f8e8df;
+  --shadow-card: 0 18px 48px rgba(20, 30, 26, 0.10), 0 2px 6px rgba(20, 30, 26, 0.04);
+  --shadow-float: 0 24px 60px rgba(20, 30, 26, 0.16);
+  color-scheme: light;
+}
+/* 保留的原生色值（浅色模式与原始设计一致） */
+.lewis-studio {
+  --lw-1: #466156;
+  --lw-2: #5c9572;
+  --lw-3: #8b6e5e;
+  --lw-4: #6f8177;
+  --lw-5: #fffefa;
+  --lw-6: #fff;
+  --lw-7: #a9ada4;
+  --lw-8: #fbfaf4;
+  --lw-9: #174b3e;
+  --lw-10: #4e665b;
+  --lw-11: #50645a;
+  --lw-12: #7a3527;
+  --lw-13: #96614f;
+  --lw-14: #788d81;
+  --lw-15: #496257;
+  --lw-16: #7a887f;
+  --lw-17: #597064;
+  --lw-18: #5b7266;
+  --lw-19: #647d70;
+  --lw-20: #98714f;
+  --lw-21: #61756a;
+  --lw-22: #a7b3a8;
+  --lw-23: #9ba89f;
+  --lw-24: #b8c2b9;
+  --lw-25: #829b8c;
+  --lw-26: #526a5d;
+  --lw-27: #8b9a91;
+  --lw-28: #7e3a2a;
+  --lw-29: #8b6253;
+  --lw-30: #967668;
+  --lw-31: #819087;
+  --lw-32: #7c8d83;
+  --lw-33: #a5b1a8;
+  --lw-34: #4a6256;
+  --lw-35: #abb5ac;
+  --lw-36: #929f96;
+  --lw-37: #637a6d;
+  --lw-38: #edece4;
+  --lw-39: #84948a;
+  --lw-40: #536a5e;
+  --lw-41: #587163;
+  --lw-42: #885f4c;
+  --lw-43: #6d4c3c;
+  --lw-44: #ac8571;
+  --lw-45: #94a098;
+  --lw-46: #6d8075;
+  --lw-47: #74887c;
+  --lw-48: #946c3e;
+  --lw-49: #9b634b;
+  --lw-50: #6d8175;
+  --lw-51: #a6b0a9;
+  --lw-52: #92a096;
+  --lw-53: #a3afa7;
+  --lw-54: #97a39b;
+  --lw-55: #c3c9c2;
+  --lw-56: #f5f3ea;
+  --lw-57: #b9d1c0;
+}
+/* 深色模式：逐色取反明度，保留色相关系 */
+html[data-theme="dark"] .lewis-studio {
+  --orange: #f08c62;
+  --orange-deep: #e57b4c;
+  --orange-soft: rgba(240, 140, 98, 0.16);
+  --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.42), 0 2px 6px rgba(0, 0, 0, 0.24);
+  --shadow-float: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+  --lw-1: #cbd7d2;
+  --lw-2: #b0c9ba;
+  --lw-3: #c9bcb5;
+  --lw-4: #b9c1bd;
+  --lw-5: #191815;
+  --lw-6: #171717;
+  --lw-7: #a3a69e;
+  --lw-8: #191815;
+  --lw-9: #d9efea;
+  --lw-10: #c8d3ce;
+  --lw-11: #c9d2ce;
+  --lw-12: #e5c7c0;
+  --lw-13: #d0b8b0;
+  --lw-14: #b2bcb7;
+  --lw-15: #cad5d1;
+  --lw-16: #b5bbb7;
+  --lw-17: #c3cdc8;
+  --lw-18: #c2ccc6;
+  --lw-19: #bcc7c1;
+  --lw-20: #d0beaf;
+  --lw-21: #c0c9c4;
+  --lw-22: #9aa59b;
+  --lw-23: #a1aba4;
+  --lw-24: #919d92;
+  --lw-25: #aab8af;
+  --lw-26: #c6d1cb;
+  --lw-27: #aab3ae;
+  --lw-28: #e3c5be;
+  --lw-29: #cebcb6;
+  --lw-30: #c3b5af;
+  --lw-31: #b0b8b3;
+  --lw-32: #b2bab5;
+  --lw-33: #9ca69e;
+  --lw-34: #cad5d0;
+  --lw-35: #99a39a;
+  --lw-36: #a7afa9;
+  --lw-37: #bdc7c2;
+  --lw-38: #1b1a13;
+  --lw-39: #aeb6b1;
+  --lw-40: #c6d0cb;
+  --lw-41: #c2cdc7;
+  --lw-42: #d2c0b8;
+  --lw-43: #dbcdc6;
+  --lw-44: #c1aba0;
+  --lw-45: #a6aea9;
+  --lw-46: #bac2bd;
+  --lw-47: #b5beb9;
+  --lw-48: #d8c7b2;
+  --lw-49: #d1b9ae;
+  --lw-50: #b9c2bd;
+  --lw-51: #9ca59f;
+  --lw-52: #a6afa9;
+  --lw-53: #9da7a0;
+  --lw-54: #a4ada7;
+  --lw-55: #8f988d;
+  --lw-56: #1b1a13;
+  --lw-57: #81a58b;
+}
+/* 深色下重新定义纸张纹理与画布光晕（浅色叠加层无法简单取反） */
+html[data-theme="dark"] .lewis-studio::before {
+  background-image: radial-gradient(rgba(206, 224, 216, 0.10) 0.7px, transparent 0.7px);
+  opacity: 0.5;
+}
+html[data-theme="dark"] .lewis-studio .stage {
+  background-image:
+    radial-gradient(rgba(188, 208, 198, 0.13) 0.75px, transparent 0.8px),
+    radial-gradient(ellipse at 50% 48%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 72%);
+}
+html[data-theme="dark"] .lewis-studio .canvas-card,
+html[data-theme="dark"] .lewis-studio .build-card,
+html[data-theme="dark"] .lewis-studio .method-card {
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+/* ---------- host-side frame: launcher + full-bleed modal ---------- */
+.lewis-launch{display:none}
+.lewis-modal{padding:0;background:var(--md-sys-color-surface-container-high,#e8e3d7);align-items:flex-start;justify-content:flex-start;overflow:auto;overscroll-behavior:contain}
+.lewis-modal .lewis-studio{width:100%;flex:0 0 auto}
+.lewis-modal .lewis-studio .topbar{padding-right:104px}
+.lewis-studio .lewis-close{position:fixed;top:19px;right:28px;z-index:30;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;border-radius:var(--radius-md);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-soft);font:600 12.5px/1 var(--sans,system-ui);letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(32,49,42,.10);transition:background 160ms ease,border-color 160ms ease,color 160ms ease}
+.lewis-studio .lewis-close:hover{background:var(--green-soft);border-color:var(--green-2);color:var(--green)}
+.lewis-studio .lewis-close svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
+@media (max-width:720px){.lewis-studio .lewis-close{top:14px;right:16px;height:34px;padding:0 12px}.lewis-modal .lewis-studio .topbar{padding-right:92px}}
+/* ===== AP_LEWIS_INTEGRATION:END (styles) ===== */
+
+
+
+/* ===== AP_GEO_INTEGRATION:BEGIN : styles ===== */
+/* 分子键角 3D 模型：样式全部作用域在 .geo-studio 下 */
+.geo-studio {
+  --paper: var(--geo-1);
+  --paper-deep: var(--geo-2);
+  --panel: var(--geo-3);
+  --panel-raised: var(--geo-4);
+  --ink: var(--geo-5);
+  --ink-soft: var(--geo-6);
+  --muted: var(--geo-7);
+  --line: rgba(23, 37, 31, .11);
+  --line-strong: rgba(23, 37, 31, .17);
+  --green: var(--geo-8);
+  --gold: var(--geo-9);
+  --gold-bright: var(--geo-10);
+  --cream: var(--geo-11);
+  --stage-deep: var(--geo-12);
+  --sans: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --display: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --ease: cubic-bezier(.2, .75, .25, 1);
+}
+.geo-studio, .geo-studio * {
+  box-sizing: border-box;
+}
+.geo-studio {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--paper);
+}
+.geo-studio {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background:
+    radial-gradient(1050px 620px at -6% -9%, rgba(255, 255, 255, .80), transparent 62%),
+    radial-gradient(880px 540px at 104% 2%, rgba(219, 182, 117, .20), transparent 57%),
+    linear-gradient(135deg, var(--geo-13) 0%, var(--geo-14) 48%, var(--geo-15) 100%);
+  background-attachment: fixed;
+}
+.geo-studio::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .42;
+  background-image:
+    linear-gradient(rgba(34, 55, 44, .030) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 55, 44, .030) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 28%, var(--geo-16) 0%, transparent 78%);
+  mask-image: radial-gradient(ellipse at 50% 28%, var(--geo-16) 0%, transparent 78%);
+}
+.geo-studio button,
+.geo-studio select {
+  font: inherit;
+}
+.geo-studio button {
+  -webkit-tap-highlight-color: transparent;
+}
+.geo-studio ::selection, .geo-studio::selection {
+  background: rgba(193, 136, 67, .24);
+  color: var(--ink);
+}
+.geo-studio :focus-visible {
+  outline: 2px solid rgba(176, 112, 43, .78);
+  outline-offset: 3px;
+}
+.geo-studio .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.geo-studio .app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(1600px, 100%);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 24px 28px 26px;
+}
+.geo-studio .masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 46px;
+  animation: geo-rise-in .55s var(--ease) both;
+}
+.geo-studio .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.geo-studio .brand-mark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  color: #e9e2d1;
+  background:
+    radial-gradient(circle at 31% 22%, rgba(255, 255, 255, .15), transparent 36%),
+    linear-gradient(145deg, #203a2e 0%, #13251d 68%, #0c1914 100%);
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 14px;
+  box-shadow:
+    0 9px 26px rgba(28, 45, 35, .16),
+    inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.geo-studio .brand-mark svg {
+  width: 36px;
+  height: 36px;
+}
+.geo-studio .brand-copy {
+  min-width: 0;
+}
+.geo-studio .brand-kicker {
+  margin: 0 0 3px;
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: .22em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.geo-studio .brand-title {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: .035em;
+  line-height: 1.2;
+}
+.geo-studio .brand-title span {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 5px 3px;
+  color: var(--geo-17);
+  font-family: var(--sans);
+  font-size: 8.5px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  vertical-align: 3px;
+  background: rgba(203, 154, 86, .21);
+  border: 1px solid rgba(155, 105, 42, .17);
+  border-radius: 5px;
+}
+.geo-studio .masthead-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--geo-18);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.geo-studio .meta-line {
+  display: block;
+  width: 25px;
+  height: 1px;
+  margin-right: 3px;
+  background: rgba(52, 77, 62, .34);
+}
+.geo-studio .meta-divider {
+  color: rgba(68, 84, 73, .38);
+}
+.geo-studio .workspace {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(290px, 334px) minmax(0, 1fr);
+  gap: 20px;
+  min-height: 620px;
+}
+/* ------------------------------------------------------------
+   Left control rail
+   ------------------------------------------------------------ */
+.geo-studio .rail {
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+  min-height: 0;
+  padding: 23px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(58, 80, 66, .22) transparent;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(238, 217, 180, .38), transparent 31%),
+    linear-gradient(155deg, rgba(251, 248, 240, .94) 0%, rgba(245, 240, 230, .90) 100%);
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 23px;
+  box-shadow:
+    0 25px 70px rgba(45, 57, 46, .10),
+    0 2px 8px rgba(45, 57, 46, .035),
+    inset 0 0 0 1px rgba(30, 51, 39, .055);
+  animation: geo-rise-in .6s .04s var(--ease) both;
+}
+.geo-studio .rail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.geo-studio .eyebrow {
+  margin: 0;
+  color: var(--geo-19);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .17em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.geo-studio .rail-count {
+  color: var(--geo-20);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: .15em;
+}
+.geo-studio .select-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 52px;
+  background: color-mix(in srgb, var(--panel-raised) 76%, transparent);
+  border: 1px solid rgba(39, 61, 48, .15);
+  border-radius: 13px;
+  box-shadow:
+    0 5px 14px rgba(43, 58, 47, .045),
+    inset 0 1px 0 rgba(255, 255, 255, .88);
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+.geo-studio .select-shell:hover {
+  border-color: rgba(46, 76, 58, .26);
+  background: color-mix(in srgb, var(--panel-raised) 93%, transparent);
+}
+.geo-studio .select-shell:focus-within {
+  border-color: rgba(165, 106, 43, .56);
+  box-shadow:
+    0 0 0 3px rgba(195, 137, 70, .13),
+    0 7px 20px rgba(43, 58, 47, .05);
+}
+.geo-studio #geo-modelSelect {
+  width: 100%;
+  height: 100%;
+  padding: 0 43px 0 14px;
+  overflow: hidden;
+  color: var(--geo-21);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+.geo-studio #geo-modelSelect optgroup {
+  color: var(--geo-22);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--geo-4);
+}
+.geo-studio #geo-modelSelect option {
+  padding: 6px 10px;
+  color: var(--geo-23);
+  font-size: 13.5px;
+  font-weight: 500;
+  background: var(--geo-4);
+}
+.geo-studio .select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 15px;
+  height: 15px;
+  color: var(--geo-24);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.geo-studio .model-block {
+  padding: 1px 1px 0;
+}
+.geo-studio .model-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 21px;
+}
+.geo-studio .model-index {
+  color: var(--gold);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.geo-studio .model-index::after {
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  margin: 0 0 -1px 10px;
+  content: "";
+  background: rgba(52, 73, 59, .18);
+}
+.geo-studio .model-group {
+  padding: 4px 8px 3px;
+  color: var(--geo-25);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .075em;
+  line-height: 1;
+  background: color-mix(in srgb, var(--panel-raised) 63%, transparent);
+  border: 1px solid rgba(45, 61, 49, .065);
+  border-radius: 999px;
+}
+.geo-studio .model-block h2 {
+  margin: 9px 0 2px;
+  color: var(--geo-26);
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: -.025em;
+  line-height: 1.12;
+}
+.geo-studio .model-en {
+  margin: 0;
+  color: var(--geo-27);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.geo-studio .model-desc {
+  min-height: 61px;
+  margin: 14px 0 0;
+  color: var(--geo-28);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .01em;
+  line-height: 1.75;
+}
+.geo-studio .stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 12px 3px;
+  background: color-mix(in srgb, var(--panel-raised) 52%, transparent);
+  border: 1px solid rgba(39, 59, 46, .085);
+  border-radius: 13px;
+}
+.geo-studio .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 5px;
+}
+.geo-studio .stat + .stat {
+  border-left: 1px solid rgba(37, 57, 44, .11);
+}
+.geo-studio .stat-label {
+  color: var(--geo-29);
+  font-size: 9px;
+  font-weight: 550;
+  letter-spacing: .055em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+.geo-studio .stat-value {
+  color: var(--geo-30);
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 620;
+  letter-spacing: -.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.geo-studio .angle-card {
+  position: relative;
+  padding: 16px 16px 14px;
+  overflow: hidden;
+  color: var(--cream);
+  background:
+    radial-gradient(circle at 91% -12%, rgba(225, 174, 101, .31), transparent 47%),
+    radial-gradient(circle at 4% 115%, rgba(77, 130, 103, .24), transparent 47%),
+    linear-gradient(145deg, #1e342b 0%, #14271f 57%, #0f2018 100%);
+  border: 1px solid rgba(255, 255, 255, .095);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 27px rgba(26, 43, 33, .13),
+    inset 0 1px 0 rgba(255, 255, 255, .075);
+}
+.geo-studio .angle-card::after {
+  position: absolute;
+  right: -29px;
+  bottom: -42px;
+  width: 116px;
+  height: 116px;
+  content: "";
+  border: 1px solid rgba(239, 212, 167, .10);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 17px rgba(239, 212, 167, .035),
+    0 0 0 38px rgba(239, 212, 167, .018);
+  pointer-events: none;
+}
+.geo-studio .angle-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.geo-studio .angle-kicker {
+  margin: 0;
+  color: #f3eddf;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .09em;
+  line-height: 1.2;
+}
+.geo-studio .angle-en {
+  margin: 4px 0 0;
+  color: rgba(234, 225, 207, .48);
+  font-size: 7.5px;
+  font-weight: 650;
+  letter-spacing: .18em;
+  line-height: 1;
+}
+.geo-studio .angle-mark {
+  margin-top: -5px;
+  color: rgba(242, 193, 123, .82);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+}
+.geo-studio .angle-tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+.geo-studio .angle-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px 6px;
+  color: #fff7e8;
+  background: rgba(247, 238, 221, .075);
+  border: 1px solid rgba(249, 231, 198, .16);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+.geo-studio .angle-value {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.geo-studio .angle-sub {
+  color: rgba(243, 228, 203, .59);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.geo-studio .angle-note {
+  position: relative;
+  z-index: 1;
+  margin: 11px 0 0;
+  color: rgba(234, 224, 207, .44);
+  font-size: 9px;
+  font-weight: 450;
+  letter-spacing: .025em;
+  line-height: 1.5;
+}
+.geo-studio .rail-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid rgba(41, 59, 47, .10);
+}
+.geo-studio .gesture-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 7px 12px;
+  color: var(--geo-31);
+  font-size: 10px;
+  line-height: 1.3;
+}
+.geo-studio .gesture-row span {
+  white-space: nowrap;
+}
+.geo-studio .gesture-row b {
+  margin-right: 3px;
+  color: var(--geo-32);
+  font-weight: 650;
+}
+.geo-studio .key-hint {
+  margin: 0;
+  color: var(--geo-33);
+  font-size: 8.5px;
+  letter-spacing: .015em;
+  line-height: 1.4;
+}
+.geo-studio .offline-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 1px 0 0;
+  color: var(--geo-34);
+  font-size: 8.5px;
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+.geo-studio .offline-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  background: var(--geo-35);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(110, 154, 112, .12);
+}
+/* ------------------------------------------------------------
+   3D stage
+   ------------------------------------------------------------ */
+.geo-studio .stage {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 620px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 73% 10%, rgba(183, 136, 77, .105), transparent 35%),
+    radial-gradient(ellipse at 30% 84%, rgba(55, 120, 92, .15), transparent 44%),
+    radial-gradient(ellipse at 50% 47%, #172d25 0%, #10221b 29%, #0b1914 61%, #07110e 100%);
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 24px;
+  box-shadow:
+    0 28px 80px rgba(29, 42, 33, .18),
+    0 5px 17px rgba(29, 42, 33, .07),
+    inset 0 0 0 1px rgba(255, 255, 255, .025);
+  animation: geo-geo-rise-in .65s .08s var(--ease) both;
+}
+.geo-studio .stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  pointer-events: none;
+  opacity: .30;
+  background-image: radial-gradient(rgba(239, 233, 215, .24) .65px, transparent .75px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 48%, #000 0%, rgba(0, 0, 0, .7) 48%, transparent 80%);
+  mask-image: radial-gradient(ellipse at 50% 48%, #000 0%, rgba(0, 0, 0, .7) 48%, transparent 80%);
+}
+.geo-studio .stage::after {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  content: "";
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .085),
+    inset 0 0 100px rgba(0, 0, 0, .16);
+}
+.geo-studio #geo-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  outline: 0;
+  user-select: none;
+}
+.geo-studio #geo-scene:focus-visible {
+  outline: 2px solid rgba(237, 188, 108, .78);
+  outline-offset: -4px;
+  border-radius: 22px;
+}
+.geo-studio .stage.is-pointer-input #geo-scene:focus-visible {
+  outline: none;
+}
+.geo-studio .stage.is-dragging #geo-scene {
+  cursor: grabbing;
+}
+.geo-studio .stage-top {
+  position: absolute;
+  top: 25px;
+  left: 28px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  pointer-events: none;
+}
+.geo-studio .stage-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding-right: 17px;
+  border-right: 1px solid rgba(239, 231, 215, .16);
+  color: rgba(233, 226, 209, .44);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.geo-studio .stage-count strong {
+  color: rgba(247, 239, 223, .92);
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -.03em;
+}
+.geo-studio .stage-total {
+  color: rgba(233, 226, 209, .37);
+  font-size: 8px;
+}
+.geo-studio .stage-title-wrap h2 {
+  margin: 0;
+  color: #f5efe3;
+  font-family: var(--display);
+  font-size: 25px;
+  font-weight: 560;
+  letter-spacing: .025em;
+  line-height: 1.14;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, .18);
+}
+.geo-studio .stage-title-wrap p {
+  margin: 5px 0 0;
+  color: rgba(216, 195, 159, .72);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .165em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.geo-studio .stage-tools {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  color: rgba(241, 233, 216, .72);
+  background: rgba(8, 20, 15, .43);
+  border: 1px solid rgba(244, 237, 221, .115);
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, .10);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+}
+.geo-studio .tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 29px;
+  height: 28px;
+  padding: 0 7px;
+  color: rgba(243, 236, 221, .74);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color .18s var(--ease), background .18s var(--ease), transform .15s var(--ease);
+}
+.geo-studio .tool-btn svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+.geo-studio .tool-btn:hover {
+  color: #fff9ec;
+  background: rgba(245, 237, 221, .10);
+}
+.geo-studio .tool-btn:active {
+  transform: scale(.94);
+}
+.geo-studio .tool-btn:focus-visible {
+  outline: 1.5px solid rgba(241, 189, 111, .8);
+  outline-offset: -1px;
+}
+.geo-studio .zoom-readout {
+  min-width: 38px;
+  color: rgba(239, 230, 212, .47);
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: .06em;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.geo-studio .tool-divider {
+  display: block;
+  width: 1px;
+  height: 17px;
+  margin: 0 3px;
+  background: rgba(240, 231, 212, .12);
+}
+.geo-studio .reset-btn {
+  padding: 0 8px 0 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.geo-studio .reset-btn span {
+  line-height: 1;
+}
+.geo-studio .stage-bottom {
+  position: absolute;
+  right: 26px;
+  bottom: 19px;
+  left: 26px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  pointer-events: none;
+}
+.geo-studio .legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.geo-studio .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(236, 228, 211, .51);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.geo-studio .legend-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+}
+.geo-studio .legend-dot.central {
+  background: radial-gradient(circle at 33% 26%, #ffedb2, #e5a343 51%, #844f1d 100%);
+  box-shadow: 0 0 0 2px rgba(225, 164, 69, .08);
+}
+.geo-studio .legend-dot.ligand {
+  background: radial-gradient(circle at 33% 26%, #e5f9d9, #7fc491 52%, #315f46 100%);
+  box-shadow: 0 0 0 2px rgba(118, 187, 139, .07);
+}
+.geo-studio .legend-dot.lone {
+  width: 6px;
+  height: 8px;
+  flex-basis: 6px;
+  background: rgba(125, 197, 237, .66);
+  border: 1px solid rgba(190, 231, 253, .53);
+  border-radius: 60% 60% 52% 52% / 70% 70% 38% 38%;
+}
+.geo-studio .gesture-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(236, 228, 211, .35);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.geo-studio .gesture-line {
+  display: block;
+  width: 18px;
+  height: 1px;
+  background: rgba(236, 228, 211, .18);
+}
+/* ------------------------------------------------------------
+   Footer / no-script
+   ------------------------------------------------------------ */
+.geo-studio .nojs {
+  position: fixed;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  z-index: 20;
+  padding: 12px 16px;
+  color: var(--geo-36);
+  font-size: 12px;
+  text-align: center;
+  background: var(--geo-37);
+  border: 1px solid rgba(100, 72, 37, .19);
+  border-radius: 10px;
+}
+/* ------------------------------------------------------------
+   Motion
+   ------------------------------------------------------------ */
+@keyframes geo-rise-in{
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* ------------------------------------------------------------
+   Responsive
+   ------------------------------------------------------------ */
+@media (max-width: 1160px){
+.geo-studio .app {
+    padding: 20px 22px 22px;
+  }
+.geo-studio .workspace {
+    grid-template-columns: minmax(278px, 304px) minmax(0, 1fr);
+    gap: 17px;
+  }
+.geo-studio .rail {
+    gap: 18px;
+    padding: 20px;
+  }
+.geo-studio .model-block h2 {
+    font-size: 29px;
+  }
+.geo-studio .stage-title-wrap h2 {
+    font-size: 23px;
+  }
+
+
+}
+@media (max-width: 920px){
+.geo-studio .app {
+    gap: 16px;
+    padding: 17px;
+  }
+.geo-studio .workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+  }
+.geo-studio .rail {
+    order: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 17px 22px;
+    align-items: start;
+    overflow: visible;
+  }
+.geo-studio .select-block {
+    grid-column: 1;
+  }
+.geo-studio .model-block {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+.geo-studio .stats {
+    grid-column: 1;
+  }
+.geo-studio .angle-card {
+    grid-column: 1 / -1;
+  }
+.geo-studio .rail-footer {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 8px 20px;
+    margin-top: 0;
+  }
+.geo-studio .key-hint {
+    text-align: right;
+  }
+.geo-studio .offline-note {
+    grid-column: 1 / -1;
+  }
+.geo-studio .model-desc {
+    min-height: 42px;
+  }
+.geo-studio .stage {
+    order: 2;
+    min-height: min(72vh, 680px);
+  }
+.geo-studio .stage-top {
+    top: 21px;
+    left: 22px;
+  }
+.geo-studio .stage-tools {
+    top: 18px;
+    right: 18px;
+  }
+.geo-studio .stage-bottom {
+    right: 22px;
+    bottom: 17px;
+    left: 22px;
+  }
+
+
+}
+@media (max-width: 620px){
+.geo-studio .masthead {
+    align-items: flex-start;
+  }
+.geo-studio .masthead-meta {
+    display: none;
+  }
+.geo-studio .brand-mark {
+    width: 41px;
+    height: 41px;
+    flex-basis: 41px;
+    border-radius: 12px;
+  }
+.geo-studio .brand-mark svg {
+    width: 32px;
+    height: 32px;
+  }
+.geo-studio .brand-title {
+    font-size: 19px;
+  }
+.geo-studio .rail {
+    display: flex;
+    gap: 17px;
+  }
+.geo-studio .model-block {
+    order: 2;
+  }
+.geo-studio .select-block {
+    order: 1;
+  }
+.geo-studio .stats {
+    order: 3;
+  }
+.geo-studio .angle-card {
+    order: 4;
+  }
+.geo-studio .rail-footer {
+    display: flex;
+    order: 5;
+  }
+.geo-studio .key-hint {
+    text-align: left;
+  }
+.geo-studio .model-desc {
+    min-height: 0;
+  }
+.geo-studio .stage {
+    min-height: 540px;
+    border-radius: 19px;
+  }
+.geo-studio .stage-top {
+    top: 18px;
+    left: 18px;
+    gap: 12px;
+  }
+.geo-studio .stage-count {
+    padding-right: 12px;
+  }
+.geo-studio .stage-title-wrap h2 {
+    font-size: 20px;
+  }
+.geo-studio .stage-title-wrap p {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+.geo-studio .stage-tools {
+    top: auto;
+    right: 14px;
+    bottom: 14px;
+  }
+.geo-studio .stage-bottom {
+    right: 18px;
+    bottom: 63px;
+    left: 18px;
+  }
+.geo-studio .legend {
+    gap: 10px;
+  }
+.geo-studio .legend-item {
+    font-size: 8px;
+  }
+.geo-studio .gesture-note {
+    display: none;
+  }
+.geo-studio .zoom-readout {
+    min-width: 33px;
+  }
+
+
+}
+@media (max-height: 760px) and (min-width: 921px){
+.geo-studio .app {
+    gap: 15px;
+    padding-top: 17px;
+    padding-bottom: 18px;
+  }
+.geo-studio .workspace {
+    min-height: 560px;
+  }
+.geo-studio .rail {
+    gap: 16px;
+    padding: 19px;
+  }
+.geo-studio .model-block h2 {
+    font-size: 28px;
+  }
+.geo-studio .model-desc {
+    min-height: 49px;
+    margin-top: 10px;
+    font-size: 11.5px;
+    line-height: 1.62;
+  }
+.geo-studio .angle-card {
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+.geo-studio .stage {
+    min-height: 560px;
+  }
+.geo-studio .rail-footer {
+    padding-top: 12px;
+  }
+
+
+}
+@media (prefers-reduced-motion: reduce){
+.geo-studio, .geo-studio *,
+.geo-studio *::before,
+.geo-studio *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+
+}
+
+
+
+/* ---- 主题桥接：跟随主界面的深浅色与色系 ---- */
+.geo-studio {
+  --paper: var(--md-sys-color-surface-container, #eae5da);
+  --paper-deep: var(--md-sys-color-surface-container-high, #e2dccf);
+  --panel: var(--md-sys-color-surface-container-low, #f6f2e8);
+  --panel-raised: var(--md-sys-color-surface-container-lowest, #fbf8f0);
+  --ink: var(--md-sys-color-on-surface, #17251f);
+  --ink-soft: var(--md-sys-color-on-surface-variant, #576357);
+  --muted: var(--md-sys-color-outline, #8b8e80);
+  --line: color-mix(in srgb, var(--md-sys-color-outline-variant, #d7d3c7) 70%, transparent);
+  --line-strong: var(--md-sys-color-outline-variant, #c4c0b4);
+  --green: var(--md-sys-color-primary, #315a46);
+  --gold: var(--md-sys-color-tertiary, #c58136);
+  --gold-bright: color-mix(in srgb, var(--md-sys-color-tertiary, #c58136) 72%, var(--md-sys-color-surface, #fff));
+  --cream: var(--md-sys-color-surface-container-lowest, #f4efe3);
+  --stage-deep: #08120f;
+  color-scheme: light;
+}
+/* 保留的原生色值（浅色模式与原始设计一致） */
+.geo-studio {
+  --geo-1: #eae5da;
+  --geo-2: #e2dccf;
+  --geo-3: #f6f2e8;
+  --geo-4: #fbf8f0;
+  --geo-5: #17251f;
+  --geo-6: #576357;
+  --geo-7: #8b8e80;
+  --geo-8: #315a46;
+  --geo-9: #c58136;
+  --geo-10: #f0bf74;
+  --geo-11: #f4efe3;
+  --geo-12: #08120f;
+  --geo-13: #eee9de;
+  --geo-14: #e9e3d7;
+  --geo-15: #e4ded1;
+  --geo-16: #000;
+  --geo-17: #68451f;
+  --geo-18: #75796d;
+  --geo-19: #5d6b5e;
+  --geo-20: #97978a;
+  --geo-21: #23342a;
+  --geo-22: #8b897c;
+  --geo-23: #1f3027;
+  --geo-24: #657365;
+  --geo-25: #6a6e60;
+  --geo-26: #17271f;
+  --geo-27: #9a7645;
+  --geo-28: #5c6458;
+  --geo-29: #86897c;
+  --geo-30: #20352a;
+  --geo-31: #757b6e;
+  --geo-32: #3f5043;
+  --geo-33: #98998b;
+  --geo-34: #8e9183;
+  --geo-35: #6e9a70;
+  --geo-36: #4c3924;
+  --geo-37: #f6e7ca;
+}
+/* 深色模式：表面取反、文字向亮端压缩 */
+html[data-theme="dark"] .geo-studio {
+  color-scheme: dark;
+  --geo-1: #221f18;
+  --geo-2: #9f9170;
+  --geo-3: #1b1913;
+  --geo-4: #191815;
+  --geo-5: #e7eeeb;
+  --geo-6: #c9cec9;
+  --geo-7: #b7b8b1;
+  --geo-8: #d0e2d9;
+  --geo-9: #d9bc9b;
+  --geo-10: #dcaa5e;
+  --geo-11: #1b1913;
+  --geo-12: #e4f1ed;
+  --geo-13: #1d1b14;
+  --geo-14: #252119;
+  --geo-15: #2b271e;
+  --geo-16: #ebebeb;
+  --geo-17: #eadbca;
+  --geo-18: #c1c2bd;
+  --geo-19: #c5cbc5;
+  --geo-20: #b3b3ac;
+  --geo-21: #e3ebe6;
+  --geo-22: #bab9b3;
+  --geo-23: #e6ede9;
+  --geo-24: #c1c7c1;
+  --geo-25: #c8c9c3;
+  --geo-26: #e6efeb;
+  --geo-27: #d4c5af;
+  --geo-28: #cacec9;
+  --geo-29: #b9bab4;
+  --geo-30: #e3ece7;
+  --geo-31: #bfc2bc;
+  --geo-32: #d4dbd6;
+  --geo-33: #b2b3ab;
+  --geo-34: #b5b7af;
+  --geo-35: #acc1ad;
+  --geo-36: #e9e1d7;
+  --geo-37: #252119;
+}
+/* 3D 视口保持深色，只用主题色轻扫一层，避免变白 */
+html[data-theme="dark"] .geo-studio .stage {
+  background:
+    radial-gradient(ellipse at 73% 10%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 35%),
+    radial-gradient(ellipse at 30% 84%, color-mix(in srgb, var(--green) 20%, transparent), transparent 44%),
+    radial-gradient(ellipse at 50% 47%, #101f1a 0%, #0b1713 29%, #07100c 61%, #040a08 100%);
+}
+/* 纸面背景与侧栏是浅色渐变，无法整体取反，深色下重绘 */
+html[data-theme="dark"] .geo-studio {
+  background:
+    radial-gradient(1050px 620px at -6% -9%, color-mix(in srgb, var(--md-sys-color-primary) 14%, transparent), transparent 62%),
+    radial-gradient(880px 540px at 104% 2%, color-mix(in srgb, var(--md-sys-color-tertiary) 16%, transparent), transparent 57%),
+    linear-gradient(135deg, var(--paper) 0%, color-mix(in srgb, var(--paper) 86%, #000) 100%);
+  background-attachment: fixed;
+}
+html[data-theme="dark"] .geo-studio .rail {
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 31%),
+    linear-gradient(155deg, color-mix(in srgb, var(--panel) 96%, transparent) 0%, color-mix(in srgb, var(--panel) 90%, transparent) 100%);
+  border-color: color-mix(in srgb, var(--line-strong) 60%, transparent);
+}
+/* 键角卡片在原设计中就是深色底 + 浅色字，深色模式下保持 */
+html[data-theme="dark"] .geo-studio .angle-card {
+  color: #f4efe3;
+  background:
+    radial-gradient(circle at 91% -12%, color-mix(in srgb, var(--gold) 34%, transparent), transparent 47%),
+    radial-gradient(circle at 4% 115%, color-mix(in srgb, var(--green) 30%, transparent), transparent 47%),
+    linear-gradient(145deg, #16281f 0%, #101d17 57%, #0b1612 100%);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+/* 纸张栅格与光晕在深色下重绘 */
+html[data-theme="dark"] .geo-studio::before {
+  background-image:
+    linear-gradient(rgba(200, 218, 210, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200, 218, 210, .05) 1px, transparent 1px);
+}
+
+/* ---------- host-side frame ---------- */
+.geo-launch{display:none}
+.geo-modal{padding:0;background:var(--md-sys-color-surface-container-high,#e8e3d7);align-items:flex-start;justify-content:flex-start;overflow:auto;overscroll-behavior:contain}
+.geo-modal .geo-studio{width:100%;flex:0 0 auto}
+.geo-studio .geo-close{position:fixed;top:18px;right:26px;z-index:30;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;border-radius:12px;border:1px solid var(--line-strong);background:var(--panel-raised);color:var(--ink-soft);font:600 12.5px/1 var(--sans,system-ui);letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(20,30,26,.12);transition:background 160ms ease,border-color 160ms ease,color 160ms ease}
+.geo-studio .geo-close:hover{background:var(--cream);border-color:var(--green);color:var(--green)}
+.geo-studio .geo-close svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
+.geo-modal .geo-studio .masthead{padding-right:112px}
+@media (max-width:720px){.geo-studio .geo-close{top:12px;right:14px;height:34px;padding:0 12px}.geo-modal .geo-studio .masthead{padding-right:100px}}
+/* ===== AP_GEO_INTEGRATION:END (styles) ===== */
