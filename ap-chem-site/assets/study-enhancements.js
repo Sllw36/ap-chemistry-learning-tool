@@ -616,7 +616,7 @@
     }
     card.append(block('Common mistake','常见错误',c.trap));
     const actions = el('div','study-actions');
-    actions.append(button('Practise this chapter','练习本章题目',()=>openBook('chapter'+String(c.id).padStart(2,'0'))));
+    actions.append(button('Practise this chapter','练习本章题目',()=>openBook('unit'+c.id)));
     if (compact) actions.append(button('Open all 9 chapters','查看全部 9 章',()=>openGuide(c.id)));
     card.append(actions);
     return card;
@@ -738,12 +738,12 @@
 
     const heading = el('div', 'reader-heading lesson-heading');
     const titleWrap = el('div');
-    titleWrap.append(el('h1', '', text(c.title)),el('p','subtext',t(`Chapter ${c.id}`,`第 ${c.id} 章`)));
+    titleWrap.append(el('h1', '', text(c.title)),el('p','subtext',t(`Unit ${c.id}`,`第 ${c.id} 单元`)));
     heading.append(titleWrap);
     guide.append(heading);
 
     const nav = el('nav', 'reader-tabs lesson-tabs');
-    nav.setAttribute('aria-label', t('Chapter sections', '本节内容'));
+    nav.setAttribute('aria-label', t('Unit sections', '单元内容'));
     const tabsList = [
       ['reading', t('Guide', '讲义')],
       ['examples', t('Worked Examples', '例题')],
@@ -751,7 +751,7 @@
     ];
     tabsList.forEach(([tKey, label]) => {
       const a = el('a', tKey === guideTab ? 'reader-tab active' : 'reader-tab');
-      a.href = `#/learn/${c.id}/${tKey}`;
+      a.href = `#/unit/${c.id}/${tKey}`;
       a.textContent = label;
       if (tKey === guideTab) {
         a.setAttribute('aria-current', 'page');
@@ -771,7 +771,7 @@
       if (lesson && lesson.sections) {
         lesson.sections.forEach((section, sIdx) => {
           const secEl = el('section', 'study-teaching reading-section');
-          secEl.id = `reading-${c.id}-${sIdx}`;
+          secEl.id = section.id;
           renderBi(secEl, 'h3', section.title, 'section-title');
           section.paragraphs.forEach(pBi => renderBi(secEl, 'p', pBi));
           if (section.tex) secEl.append(formula(section.tex));
@@ -781,7 +781,7 @@
       }
       const review = el('details', 'study-recap');
       review.append(
-        el('summary', '', t('Chapter summary', '章节小结')),
+        el('summary', '', t('Unit summary', '单元小结')),
         blockBi('Core concept', '核心概念', c.core),
         blockBi('Prerequisites', '先备知识', lesson.before),
         blockBi('Learning goals', '学习目标', lesson.goals),
@@ -796,49 +796,26 @@
       footer.append(button('Worked examples →', '查看例题 →', () => openGuide(c.id, 'examples'), 'filled btn'));
       contentEl.append(footer);
     } else if (guideTab === 'examples') {
-      const ex1 = el('section', 'study-example');
-      ex1.append(el('h3', 'example-title', t('Worked example 1 · follow the reasoning', '例题 1 · 跟着思路做')));
-      renderBi(ex1, 'p', c.example);
-      const ol1 = el('ol', 'steps');
-      c.steps.forEach(s => {
-        const li = el('li');
-        const d = el('div');
-        renderBi(d, 'p', s);
-        li.append(d);
-        ol1.append(li);
+      lesson.examples.forEach((example,i) => {
+        const card = el('section','study-example');card.id=example.id;
+        card.append(el('h3','example-title',t(`Example ${i+1}`,`例题 ${i+1}`)));
+        renderBi(card,'p',example.prompt);
+        const steps=el('ol','steps');
+        example.steps.forEach(step=>{const li=el('li');renderBi(li,'p',step);steps.append(li);});
+        card.append(steps);if(example.tex)card.append(formula(example.tex));contentEl.append(card);
       });
-      ex1.append(ol1);
-      contentEl.append(ex1);
-
-      if (lesson && lesson.extra) {
-        const ex2 = el('section', 'study-example');
-        ex2.append(el('h3', 'example-title', t('Worked example 2 · apply the concept', '例题 2 · 应用概念')));
-        renderBi(ex2, 'p', lesson.extra.prompt);
-        const ol2 = el('ol', 'steps');
-        lesson.extra.steps.forEach(s => {
-          const li = el('li');
-          const d = el('div');
-          renderBi(d, 'p', s);
-          li.append(d);
-          ol2.append(li);
-        });
-        ex2.append(ol2);
-        if (lesson.extra.tex) ex2.append(formula(lesson.extra.tex));
-        contentEl.append(ex2);
-      }
 
       const footer = el('footer', 'lesson-footer study-actions');
       footer.append(
-        button('Practice checks →', '章节自测 →', () => openGuide(c.id, 'checks'), 'filled btn'),
+        button('Practice checks →', '自测 →', () => openGuide(c.id, 'checks'), 'filled btn'),
         button('← Back to guide', '← 返回讲义', () => openGuide(c.id, 'reading'), 'btn textbutton')
       );
       contentEl.append(footer);
     } else if (guideTab === 'checks') {
       if (lesson && lesson.checks) {
         const checksSec = el('section', 'study-checks');
-        checksSec.append(el('h3', '', t('Try it yourself before revealing the answer', '先独立尝试，再展开答案')));
         lesson.checks.forEach((chk, i) => {
-          const item = el('div', 'study-check');
+          const item = el('div', 'study-check');item.id=chk.id;
           const qWrap = el('div', 'study-check-question');
           renderBi(qWrap, 'p', chk.question, '', `${i + 1}. `);
           item.append(qWrap);
@@ -856,7 +833,7 @@
 
       const footer = el('footer', 'lesson-footer study-actions');
       footer.append(
-        button('Practise book questions', '练习本书题目', () => openBook('chapter' + String(c.id).padStart(2, '0')), 'filled btn'),
+        button('Practise book questions', '练习本书题目', () => openBook('unit'+c.id), 'filled btn'),
         button('← Back to examples', '← 查看例题', () => openGuide(c.id, 'examples'), 'btn textbutton')
       );
       contentEl.append(footer);
@@ -884,11 +861,12 @@
   let bookData, groupId='all', questionType='all', search='', wrongOnly=false, questionIndex=0;
   let history=read('apchem.bookHistory.v1',{});
   if (!history || typeof history !== 'object' || Array.isArray(history)) history={};
-  let selected=null, revealed=false, written='';
-  function resetAnswer() { selected=null;revealed=false;written=''; }
+  let selected=null, revealed=false, written='', recorded=false;
+  function resetAnswer() { selected=null;revealed=false;written='';recorded=false; }
   function filtered() {
     if (!bookData) return [];
-    return bookData.groups.filter(g=>groupId==='all'||g.id===groupId).flatMap(g=>g.questions.map(q=>({...q,group:g})))
+    const unit=content.chapters.find(c=>'unit'+c.id===groupId);
+    return bookData.groups.filter(g=>groupId==='all'||(unit ? unit.sourceChapters.includes(Number(g.id.replace('chapter',''))) : g.id===groupId)).flatMap(g=>g.questions.map(q=>({...q,group:g})))
       .filter(q=>(questionType==='all'||q.type===questionType)&&(!wrongOnly||history[q.id]?.correct===false)&&
         (!search||(q.stem+' '+q.group.title).toLowerCase().includes(search.toLowerCase())));
   }
@@ -908,7 +886,12 @@
     });
     div.append(...parsed.body.childNodes);return div;
   }
-  function record(q, correct, choice=null) { history[q.id]={correct,choice,at:Date.now()};save('apchem.bookHistory.v1',history); }
+  function record(q, correct, choice=null) {
+    if (recorded) return;
+    recorded=true;
+    history[q.id]={correct,choice,at:Date.now()};save('apchem.bookHistory.v1',history);
+    if (window.__answerStats) window.__answerStats(correct);
+  }
   function renderBookShell() {
     hideAllPopups();
     book.replaceChildren();
@@ -934,7 +917,7 @@
       const l=el('label','',label);const s=el('select');options.forEach(([v,title])=>{const o=el('option','',title);o.value=v;s.append(o);});
       s.value=value;s.addEventListener('change',()=>{onChange(s.value);questionIndex=0;resetAnswer();renderBookQuestion();});l.append(s);filters.append(l);
     }
-    selectControl(t('Chapter or test','章节 / 测试'),[['all',t('All chapters and tests','全部章节与测试')],...bookData.groups.map(g=>[g.id,(g.kind==='chapter' ? String(Number(g.id.slice(7)))+'. ' : '')+g.title])],groupId,v=>groupId=v);
+    selectControl(t('Chapter or test','章节 / 测试'),[['all',t('All chapters and tests','全部章节与测试')],...content.chapters.map(c=>['unit'+c.id,t('Unit '+c.id+' · Related book chapters','单元 '+c.id+' · 相关原书章节')]),...bookData.groups.map(g=>[g.id,(g.kind==='chapter' ? String(Number(g.id.slice(7)))+'. ' : '')+g.title])],groupId,v=>groupId=v);
     selectControl(t('Type','题型'),[['all',t('All types','全部题型')],['mcq','MCQ'],['frq','FRQ']],questionType,v=>questionType=v);
     const l=el('label','',t('Search','搜索'));const input=el('input');input.type='search';input.value=search;input.placeholder=t('Search English question text','搜索英文题目');
     input.addEventListener('input',()=>{search=input.value;questionIndex=0;resetAnswer();renderBookQuestion();});l.append(input);filters.append(l);
@@ -978,7 +961,12 @@
       if(q.answer!==null)feedback.append(el('h3',selected===q.answer?'book-correct':'book-incorrect',selected===q.answer?t('Correct','回答正确'):t(`Correct answer: ${String.fromCharCode(65+q.answer)}`,`正确选项：${String.fromCharCode(65+q.answer)}`)));
       else feedback.append(el('p','',t('Compare with the source explanation and assess your work. This question is not auto-graded.','请对照原书解析自行判断；本题不自动判分。')));
       feedback.append(bookHtml(q.explanation || t('No source explanation was found.','没有找到对应的原书解析。')));
-      if(q.answer===null)feedback.append(button('I got it right','我答对了',()=>{record(q,true);progress.textContent=t('Recorded as correct','已记录为答对');}),button('Review later','加入错题',()=>{record(q,false);progress.textContent=t('Saved for review','已加入书本错题');}));
+      if(q.answer===null) {
+        const right=button('I got it right','我答对了',()=>{record(q,true);if(wrongOnly)resetAnswer();renderBookQuestion();progress.textContent=t('Recorded as correct','已记录为答对');});
+        const review=button('Review later','加入错题',()=>{record(q,false);renderBookQuestion();progress.textContent=t('Saved for review','已加入书本错题');});
+        right.disabled=review.disabled=recorded;
+        feedback.append(right,review);
+      }
       article.append(feedback);
     }
     const source=el('details','book-source-sheet');source.append(el('summary','',t('Open original question section to verify context','打开原书题目区核对上下文')),bookHtml(q.group.sheets[q.type]));article.append(source);

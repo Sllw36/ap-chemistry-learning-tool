@@ -14114,14 +14114,16 @@ drawQuantum();
              : ((location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "http://localhost:8787" : "");
     return String(base).replace(/\/+$/, "");   // 去掉结尾斜杠，避免拼成 "//api/..."
   }
-  function loadStats(){
+  // 旧版统计无法判断所属账号，仅保留为匿名本机数据。
+  function statsKey(a){ return a.token && a.name ? "apchem.stats.v2:" + encodeURIComponent(a.name) : STATS_KEY; }
+  function loadStats(key){
     try {
-      var s = JSON.parse(localStorage.getItem(STATS_KEY) || "null") || {};
+      var s = JSON.parse(localStorage.getItem(key || statsKey(acct())) || "null") || {};
       return { answered: s.answered|0, correct: s.correct|0, onlineSeconds: s.onlineSeconds|0 };
     } catch(e){ return { answered:0, correct:0, onlineSeconds:0 }; }
   }
-  function saveStats(s){
-    try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch(e){}
+  function saveStats(s, key){
+    try { localStorage.setItem(key || statsKey(acct()), JSON.stringify(s)); } catch(e){}
   }
   function escHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
   function fmtDur(sec){
@@ -14135,6 +14137,7 @@ drawQuantum();
 
   /* —— 作答埋点：recordAnswer 每次作答都会调用 —— */
   window.__answerStats = function(correct){
+    ensureAccount();
     var s = loadStats();
     s.answered += 1;
     if (correct) s.correct += 1;
@@ -14148,34 +14151,62 @@ drawQuantum();
     if (pushTimer) return;
     pushTimer = setTimeout(function(){ pushTimer = null; pushStats(); }, PUSH_DELAY);
   }
+  var accountState;
+  function ensureAccount(){
+    var a = acct();
+    if (!accountState || accountState.token !== a.token || accountState.name !== a.name){
+      accountState = { token:a.token, name:a.name, key:statsKey(a), ready:!a.token,
+        baseline:loadStats(statsKey(a)), pulling:null };
+      if (a.token) pullStats();
+    }
+    return accountState;
+  }
+  function isCurrent(state){
+    var a = acct();
+    return state === accountState && state.token === a.token && state.name === a.name;
+  }
   function pushStats(){
-    if (!acct().token) return Promise.resolve();
-    return post("/api/sync/push", { stats: loadStats() });
+    var state = ensureAccount();
+    if (!state.token || !state.name) return Promise.resolve();
+    if (state.pulling || !state.ready) return pullStats().then(function(){
+      if (state.ready && isCurrent(state)) return pushStats();
+    });
+    return post("/api/sync/push", { stats: loadStats(state.key) }, state);
   }
   function pullStats(){
-    if (!acct().token) return Promise.resolve();
-    return post("/api/sync/pull", {}).then(function(d){
-      if (d && d.ok && d.data && d.data.stats){
-        var srv = d.data.stats, s = loadStats();
+    var state = ensureAccount();
+    if (!state.token || !state.name) return Promise.resolve();
+    if (state.pulling) return state.pulling;
+    var baseline = state.ready ? loadStats(state.key) : state.baseline;
+    state.pulling = post("/api/sync/pull", {}, state).then(function(d){
+      if (!isCurrent(state)) return;
+      if (d && d.ok && d.data){
+        var srv = d.data.stats || {}, s = loadStats(state.key);
         // 做题数与正确数整体采信更多的一方，避免逐字段取最大值把正确率抬高；
         // 在线时长与答题数相互独立，两端口径一致，直接取较大值。
         var merged = {
-          answered: s.answered,
-          correct: s.correct,
-          onlineSeconds: Math.max(s.onlineSeconds, srv.onlineSeconds|0)
+          answered: baseline.answered,
+          correct: baseline.correct,
+          onlineSeconds: Math.max(baseline.onlineSeconds, srv.onlineSeconds|0)
         };
         if ((srv.answered|0) > merged.answered){
           merged.answered = srv.answered|0;
           merged.correct = srv.correct|0;
         }
+        // 云端请求期间发生的作答不能被较大的云端累计吞掉。
+        merged.answered += s.answered - baseline.answered;
+        merged.correct += s.correct - baseline.correct;
+        merged.onlineSeconds += s.onlineSeconds - baseline.onlineSeconds;
         merged.correct = Math.min(merged.correct, merged.answered);   // 正确率不超过 100%
-        saveStats(merged);
+        saveStats(merged, state.key);
+        state.ready = true;
       }
-    });
+    }).finally(function(){ state.pulling = null; });
+    return state.pulling;
   }
 
-  async function post(path, body){
-    var a = acct();
+  async function post(path, body, a){
+    a = a || acct();
     var headers = { "Content-Type": "application/json" };
     if (a.token) headers["Authorization"] = "Bearer " + a.token;
     try {
@@ -14192,6 +14223,7 @@ drawQuantum();
 
   /* —— 在线时长：登录 + 页面可见时才累计 —— */
   setInterval(function(){
+    ensureAccount();
     if (!acct().token) return;
     if (document.hidden) return;
     var s = loadStats();
@@ -14209,8 +14241,8 @@ drawQuantum();
     if (!box) return;
     var s = loadStats(), a = acct();
     var tip = a.token
-      ? '<p class="stats-tip">已登录：<b>' + escHtml(a.name) + '</b>（统计已同步到云端）</p>'
-      : '<p class="stats-tip">尚未登录：做题数据仅保存在本机，登录后可同步到云端并参与排行榜。</p>';
+      ? '<p class="stats-tip">账号：<b>' + escHtml(a.name) + '</b></p>'
+      : '<p class="stats-tip">本机统计 · 与账号统计分开保存</p>';
     box.innerHTML =
       '<div class="stats-row">' +
         '<div class="stat-card"><div class="stat-num">' + fmtDur(s.onlineSeconds) + '</div><div class="stat-label">在线时长</div></div>' +
@@ -14250,14 +14282,10 @@ drawQuantum();
   window.__rankShow = function(){ renderLeaderboard(); };
 
   /* —— 登录后拉取一次云端统计（账号模块写 localStorage 后由本计时器发现） —— */
-  var lastToken = acct().token;
+  ensureAccount();
   setInterval(function(){
-    var t = acct().token;
-    if (t && t !== lastToken){
-      lastToken = t;
-      pullStats().then(renderStats);
-    } else if (!t && lastToken){
-      lastToken = t;
+    var previous = accountState;
+    if (ensureAccount() !== previous){
       renderStats();
     }
   }, 3000);
