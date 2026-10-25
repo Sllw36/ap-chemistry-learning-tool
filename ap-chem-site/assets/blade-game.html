@@ -40,6 +40,8 @@ button:disabled{cursor:not-allowed;opacity:.36}
 .stat.gold b{color:var(--gold)}
 .stat.quota b{color:var(--orange2)}
 .stat.day b{color:var(--ink)}
+.relic-tip{font-family:var(--mono);font-size:9px;color:#ffd166;letter-spacing:.02em;line-height:1.45;max-width:300px;text-align:right;opacity:0;transform:translateY(-2px);transition:opacity .2s ease,transform .2s ease;pointer-events:none}
+.relic-tip.on{opacity:1;transform:translateY(0)}
 .patience{display:flex;gap:3px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:5px 8px}
 .patience i{width:9px;height:12px;border-radius:2px;background:#2a2226;display:block;position:relative}
 .patience i.on{background:linear-gradient(180deg,#ffb15c,#e0483f);box-shadow:0 0 8px rgba(255,122,47,.5)}
@@ -256,6 +258,7 @@ button:disabled{cursor:not-allowed;opacity:.36}
     <div class="stat gold">金币 <b id="hGold">0</b></div>
     <div class="patience" id="hPatience" title="奶龙耐心"><i class="on"></i><i class="on"></i><i class="on"></i></div>
     <div class="spacer"></div>
+    <span class="relic-tip" id="relicTip"></span>
     <button class="icon-btn" id="vaultBtn" title="遗物台">✦</button>
     <button class="icon-btn" id="btnHelp" title="机制与对照">?</button>
     <button class="icon-btn" id="btnRestart" title="重开">↻</button>
@@ -464,7 +467,7 @@ button:disabled{cursor:not-allowed;opacity:.36}
     <h2>锻刀纳贡 · 机制说明</h2>
     <p>把 <b>ForgeTax</b> 的锻造循环和 AP Chemistry 题库缝在一起：熔炉加热 → 敲击＝做题 → 入神 → 上贡 / 换遗物，30 天为限。<br>
     答对/答错只决定<b>进哪个池子</b>，具体结果仍在池内抽签：正确池＝成功/大成功/维持，错误池＝损伤/破坏。<br>
-    当前内容：<b>9 个化学单元 44 道题</b>、<b>23 件遗物（6 大流派）</b>、<b>19 种商人货品</b>、<b>36 种刀形</b>。</p>
+    当前内容：<b>9 个化学单元 44 道题</b>、<b>25 件遗物（6 大流派）</b>、<b>22 种商人货品</b>、<b>36 种刀形</b>。</p>
     <table class="map-table">
       <thead><tr><th>原作机制</th><th>2D 表现</th><th>数值</th></tr></thead>
       <tbody>
@@ -572,6 +575,8 @@ button:disabled{cursor:not-allowed;opacity:.36}
     </div>
     <div class="card-actions">
       <span id="qMaintainHint" style="margin-right:auto;font-family:var(--mono);font-size:8px;color:var(--dim)"></span>
+      <button class="btn ghost hidden" id="qHintCharm" type="button">提示符</button>
+      <button class="btn ghost hidden" id="qAnswer" type="button">答案</button>
       <button class="btn ghost" id="qMaintain" type="button">维持 · 跳过</button>
       <button class="btn primary hidden" id="qNext" type="button">继续锻打</button>
     </div>
@@ -1591,8 +1596,9 @@ const SCHOOLS = {
 const RELICS = {
   /* ---- 成功流 ---- */
   chalk:   { id:'chalk',   name:'红粉笔',     en:'RED CHALK',      cost:1, school:'success', desc:'正确池 +2 张「成功」。' },
-  powder:  { id:'powder',  name:'火药袋',     en:'POWDER BAG',     cost:1, school:'success', desc:'正确池 +2 张「大成功」。' },
+  powder:  { id:'powder',  name:'火药袋',     en:'POWDER BAG',     cost:2, school:'success', desc:'正确池 +2 张「大成功」。' },
   whet:    { id:'whet',    name:'磨刀石',     en:'WHETSTONE',      cost:1, school:'success', desc:'每次成功/大成功额外 +10% 价值。' },
+  hundredForge:{ id:'hundredForge', name:'百炼成钢', en:'HUNDRED-FOLD', cost:6, school:'damage', desc:'每次损伤后累积 1 层，下次成功/大成功按 ×1.3 的层数倍结算（可叠加）。' },
   hammerSong:{ id:'hammerSong', name:'锤歌',  en:'HAMMER SONG',    cost:1, school:'success', desc:'连对 2 次起，每次成功再 +6% 价值。' },
   /* ---- 维持流 ---- */
   stardust:{ id:'stardust',name:'冷却的星屑', en:'COOLED STARDUST',cost:1, school:'hold',    desc:'入神充能需求 10 → 7。' },
@@ -1603,21 +1609,22 @@ const RELICS = {
   scar:    { id:'scar',    name:'伤痕纹',     en:'SCAR PATTERN',   cost:2, school:'damage',  desc:'每层损伤让价值收益 +6%（上限 +30%）。' },
   /* ---- 容错流 ---- */
   scale:   { id:'scale',   name:'裂开的龙鳞', en:'CRACKED SCALE',  cost:1, school:'guard',   desc:'错误池 −2 张「破坏」。' },
-  spring:  { id:'spring',  name:'悔恨的发条', en:'REGRET SPRING',  cost:2, school:'guard',   desc:'每把剑的第一次「损伤」被撤回。' },
+  spring:  { id:'spring',  name:'悔恨的发条', en:'REGRET SPRING',  cost:2, school:'guard',   desc:'每把剑第一次从错误池抽签时，那一签直接取消。' },
   oblivion:{ id:'oblivion',name:'遗忘之乡',   en:'OBLIVION',       cost:3, school:'guard',   desc:'「破坏」有 50% 概率变成「损伤」。' },
-  apron:   { id:'apron',   name:'铁匠围裙',   en:'SMITH APRON',    cost:2, school:'guard',   desc:'每把剑的第一次「损伤」不降等级。' },
+  apron:   { id:'apron',   name:'铁匠围裙',   en:'SMITH APRON',    cost:2, school:'guard',   desc:'每把剑的第一次「损伤」所扣的价值，双倍加回来。' },
   wool:    { id:'wool',    name:'羊毛衬',     en:'WOOL LINING',    cost:3, school:'guard',   desc:'每把剑第一次「断刀」变成「损伤」。' },
-  steady:  { id:'steady',  name:'稳手',       en:'STEADY HAND',    cost:3, school:'guard',   desc:'连错 4 次才断刀（原本 3 次）。' },
+  charm:   { id:'charm',   name:'神符',       en:'DIVINE CHARM',   cost:10, school:'guard',   desc:'错误池里只要还有「破坏」以外的签，就绝不会抽到「破坏」；只剩破坏时必出破坏。' },
+  steady:  { id:'steady',  name:'稳手',       en:'STEADY HAND',    cost:3, school:'guard',   desc:'「损伤」的价值系数由 ×0.75 改为 ×0.9。' },
   /* ---- 暴击流 ---- */
-  roc:     { id:'roc',     name:'隼羽',       en:'FALCON FEATHER', cost:1, school:'crit',    desc:'正确池 +2 张「大成功」。' },
+  roc:     { id:'roc',     name:'隼羽',       en:'FALCON FEATHER', cost:1, school:'crit',    desc:'「维持」的价值系数由 ×1.0 改为 ×1.1。' },
   bellows: { id:'bellows', name:'风箱',       en:'BELLOWS',        cost:2, school:'crit',    desc:'大成功的价值额外 +20%。' },
   /* ---- 经济流 ---- */
   purse:   { id:'purse',   name:'钱袋',       en:'COIN PURSE',     cost:1, school:'eco',     desc:'上贡金币 +20%。' },
   haggle:  { id:'haggle',  name:'讨价',       en:'HAGGLING',       cost:1, school:'eco',     desc:'商人所有商品 85 折。' },
   /* ---- 锋芒流 ---- */
   /* ---- 中立 ---- */
-  ticket:  { id:'ticket',  name:'幽灵送货单', en:'GHOST WAYBILL',  cost:1, school:null,      desc:'每天多一块剑胚（3 → 4）。' },
-  tinder:  { id:'tinder',  name:'火绒盒',     en:'TINDERBOX',      cost:1, school:null,      desc:'加热窗口放宽：45% 起 → 30% 起。' },
+  ticket:  { id:'ticket',  name:'幽灵送货单', en:'GHOST WAYBILL',  cost:2, school:null,      desc:'每天多一块剑胚（3 → 4）。' },
+  tinder:  { id:'tinder',  name:'火绒盒',     en:'TINDERBOX',      cost:1, school:null,      desc:'剑胚不会被烧毁。' },
   bell:    { id:'bell',    name:'贡铃',       en:'TRIBUTE BELL',   cost:1, school:null,      desc:'上贡获得的金币 +35%。' },
   ledger:  { id:'ledger',  name:'龙账本',     en:'DRAGON LEDGER',  cost:1, school:null,      desc:'每日贡品线下调 8%。' }
 };
@@ -1629,25 +1636,28 @@ function activeSchools(){
 }const RELIC_IDS = Object.keys(RELICS);
 
 const MERCHANT = {
-  coal:    { id:'coal',    name:'精炼煤', price:220, desc:'让当前这把刀的价值 ×1.6（没上砧则作用于下一把）。' },
-  stone:   { id:'stone',   name:'补炉石', price:180, desc:'抵掉一次烧毁，用掉为止。' },
-  saliva:  { id:'saliva',  name:'龙涎',   price:260, desc:'抽走当前签筒里 2 张「破坏」。' },
-  sand:    { id:'sand',    name:'星砂',   price:320, desc:'立刻把当前剑的入神充能充满。' },
-  mithril: { id:'mithril', name:'秘银锤', price:420, desc:'今日签筒 +3 张「成功」。' },
-  ember:   { id:'ember',   name:'余烬袋', price:160, instant:true, desc:'立刻 +220 金币。' },
-  knife:   { id:'knife',   name:'二手打刀', price:640, instant:true, desc:'立刻得到一把现成的刀（价值 900 · LV8），直接放上铁砧。' },
-  file:    { id:'file',    name:'细锉刀',   price:240, desc:'今日每次成功额外 +8% 价值。' },
-  gloves:  { id:'gloves',  name:'隔热手套', price:200, desc:'今日加热窗口放宽（45% → 30% 起）。' },
-  dust:    { id:'dust',    name:'龙鳞粉',   price:340, desc:'把当前签筒里所有「破坏」换成「维持」。' },
-  order:   { id:'order',   name:'加急订单', price:300, instant:true, desc:'今日贡品线立刻下调 15%。' },
-  billet:  { id:'billet',  name:'备用剑胚', price:260, instant:true, unlimited:true, desc:'立刻多一块未使用的剑胚。可重复购买；当天没用完会带到下一天。' },
-  bandage: { id:'bandage', name:'布条',     price:180, desc:'今日第一次断刀被抵消。' },
-  talisman:{ id:'talisman',name:'护符',     price:360, desc:'今日入神充能需求 −3。' },
-  chisel:  { id:'chisel',  name:'凿子',     price:300, desc:'今日「连对 2 次」就算大成功（原本 3 次）。' },
-  lamp:    { id:'lamp',    name:'长明灯',   price:320, desc:'今日入神时长 30 秒 → 45 秒。' },
-  charcoal:{ id:'charcoal',name:'炭粉',     price:220, desc:'今日正确池 +3 张「大成功」。' },
-  coin:    { id:'coin',    name:'幸运币',   price:160, desc:'今日错误池 +2 张「维持」、+1 张「成功」——答错也可能走运。' },
-  mirror:  { id:'mirror',  name:'照心镜',   price:240, desc:'立刻把当前签筒重洗一遍（换一手牌）。' }
+  coal:    { id:'coal',    name:'精炼煤', price:165, desc:'让当前这把刀的价值 ×1.6（没上砧则作用于下一把）。' },
+  stone:   { id:'stone',   name:'补炉石', price:135, desc:'抵掉一次烧毁，用掉为止。' },
+  saliva:  { id:'saliva',  name:'龙涎',   price:195, desc:'抽走当前签筒里 2 张「破坏」。' },
+  sand:    { id:'sand',    name:'星砂',   price:240, desc:'立刻把当前剑的入神充能充满。' },
+  mithril: { id:'mithril', name:'秘银锤', price:315, desc:'今日签筒 +3 张「成功」。' },
+  ember:   { id:'ember',   name:'余烬袋', price:120, instant:true, desc:'立刻 +220 金币。' },
+  knife:   { id:'knife',   name:'二手打刀', price:480, instant:true, desc:'立刻得到一把现成的刀（价值 900 · LV8），直接放上铁砧。' },
+  file:    { id:'file',    name:'细锉刀',   price:180, desc:'今日每次成功额外 +8% 价值。' },
+  gloves:  { id:'gloves',  name:'隔热手套', price:150, desc:'今日加热窗口放宽（45% → 30% 起）。' },
+  dust:    { id:'dust',    name:'龙鳞粉',   price:255, desc:'把当前签筒里所有「破坏」换成「维持」。' },
+  order:   { id:'order',   name:'加急订单', price:225, instant:true, desc:'今日贡品线立刻下调 15%。' },
+  billet:  { id:'billet',  name:'备用剑胚', price:195, instant:true, unlimited:true, desc:'立刻多一块未使用的剑胚。可重复购买；当天没用完会带到下一天。' },
+  bandage: { id:'bandage', name:'布条',     price:135, desc:'今日第一次断刀被抵消。' },
+  talisman:{ id:'talisman',name:'护符',     price:270, desc:'今日入神充能需求 −3。' },
+  chisel:  { id:'chisel',  name:'凿子',     price:225, desc:'今日「连对 2 次」就算大成功（原本 3 次）。' },
+  lamp:    { id:'lamp',    name:'长明灯',   price:240, desc:'今日入神时长 30 秒 → 45 秒。' },
+  charcoal:{ id:'charcoal',name:'炭粉',     price:165, desc:'今日正确池 +3 张「大成功」。' },
+  coin:    { id:'coin',    name:'幸运币',   price:120, desc:'今日错误池 +2 张「维持」、+1 张「成功」——答错也可能走运。' },
+  mirror:  { id:'mirror',  name:'照心镜',   price:180, desc:'立刻把当前签筒重洗一遍（换一手牌）。' },
+  hintCharm:{ id:'hintCharm', name:'提示符', price:150, desc:'答题时使用：排除一个错误选项，并给出本题提示。' },
+  answer:  { id:'answer',  name:'答案',     price:280, desc:'答题时使用：这道题直接算作答对。' },
+  finalGamble:{ id:'finalGamble', name:'最后一博', price:320, desc:'今日剩余时间：正确池全变「大成功」，错误池全变「破刀」。' }
 };
 const MERCHANT_IDS = Object.keys(MERCHANT);
 
@@ -1811,8 +1821,8 @@ function poolRightCounts(b){
   if (S.relics.includes('chalk')) c.success += 2;
   if (S.relics.includes('powder')) c.big += 2;
   if (resonance('success')) c.big += 3;
-  if (S.relics.includes('roc')) c.big += 2;
   if (S.buffs.charcoal) c.big += 3;
+  if (S.buffs.finalGamble) return { big: c.success + c.big + (c.hold || 0) };
   return c;
 }
 function poolWrongCounts(b){
@@ -1821,6 +1831,7 @@ function poolWrongCounts(b){
   if (S.buffs.saliva) { const k = Math.min(c.break, 2); c.break -= k; c.damage += k; }
   if (b && b.dmg) { const k = Math.min(c.damage, b.dmg); c.break += k; c.damage -= k; }
   if (S.buffs.coin){ c.hold = (c.hold || 0) + 2; c.success = (c.success || 0) + 1; }   // 幸运币：错误池也可能出维持/成功
+  if (S.buffs.finalGamble) return { break: c.damage + c.break + (c.hold || 0) + (c.success || 0) };
   return c;
 }
 function buildPool(counts){
@@ -1836,6 +1847,16 @@ function drawFrom(b, which){
   ensurePools(b);
   const pool = which === 'R' ? b.poolR : b.poolW;
   if (!pool.length) pool.push(...buildPool(which === 'R' ? poolRightCounts(b) : poolWrongCounts(b)));
+  if (which === 'W' && S.relics.includes('charm')){
+    // 神符：池里还有「破坏」以外的签时，绝不会抽到破坏
+    for (let i = pool.length - 1; i >= 0; i--){
+      if (pool[i] !== 'break'){
+        if (pool[pool.length - 1] === 'break') relicFx('神符', '避开破坏');
+        const t = pool[i]; pool[i] = pool[pool.length - 1]; pool[pool.length - 1] = t;
+        return pool.pop();
+      }
+    }
+  }
   return pool.pop();
 }
 function riskOf(blade){
@@ -1848,6 +1869,23 @@ function riskOf(blade){
 /* ============================================================
    LOG / TOAST / FLOAT
    ============================================================ */
+let __relicFx = [];
+/* 遗物生效时在右上角遗物台按钮旁给出提示 */
+function relicFx(name, detail){
+  __relicFx.push(detail ? name + ' ' + detail : name);
+  if (__relicFx.length > 4) __relicFx.shift();
+  const el = document.getElementById('relicTip');
+  if (!el) return;
+  el.textContent = '遗物生效 · ' + __relicFx.join(' · ');
+  el.classList.add('on');
+  clearTimeout(relicFx._t);
+  relicFx._t = setTimeout(() => el.classList.remove('on'), 2800);
+}
+function relicFxReset(){
+  __relicFx = [];
+  const el = document.getElementById('relicTip');
+  if (el){ el.classList.remove('on'); el.textContent = ''; }
+}
 function log(type, text, delta){
   S.log.unshift({ type, text, delta });
   S.log = S.log.slice(0, 7);
@@ -2213,6 +2251,20 @@ function renderInv(){
   }).join('');
 }
 const NEED_BLADE_ITEMS = ['saliva', 'dust', 'sand'];
+const NEED_QUIZ_ITEMS = ['hintCharm', 'answer'];
+/* 提示符：排除一个错误选项并给出提示 */
+function applyHintCharm(){
+  const q = S.curQ;
+  if (!q) return;
+  const wrong = q.options.map((_, i) => i).filter(i => i !== q.answer);
+  const pick = wrong.length ? wrong[Math.floor(Math.random() * wrong.length)] : -1;
+  if (pick >= 0){
+    const btn = document.querySelectorAll('#qOpts .q-opt')[pick];
+    if (btn){ btn.disabled = true; btn.classList.add('dim'); btn.style.textDecoration = 'line-through'; }
+  }
+  const cn = document.getElementById('qCn');
+  if (cn) cn.textContent = (q.cn || '') + ' · 提示：' + (q.hint || '已排除一个明显错误的选项');
+}
 function useInv(id){
   if (typeof id === 'number') id = S.inv[id];      // 兼容旧调用
   const idx = S.inv.indexOf(id);
@@ -2222,6 +2274,10 @@ function useInv(id){
   const b = S.active;
   if (NEED_BLADE_ITEMS.includes(id) && !(b && b.state === 'hot')){
     toast('先拿一把刀上砧，再用这个。', true);
+    return;
+  }
+  if (NEED_QUIZ_ITEMS.includes(id) && !(S.curQ && !S.answered)){
+    toast('先开始一道题，再用这个。', true);
     return;
   }
   let msg = '';
@@ -2242,7 +2298,15 @@ function useInv(id){
   else if (id === 'charcoal'){ S.buffs.charcoal = true; msg = '今日正确池 +3 张大成功'; }
   else if (id === 'coin'){ S.buffs.coin = true; msg = '今日错误池 +2 维持 +1 成功'; }
   else if (id === 'mirror'){ if (b){ b.poolR = null; b.poolW = null; ensurePools(b); } msg = '签筒已重洗'; }
+  else if (id === 'hintCharm'){ applyHintCharm(); msg = '已排除一个错误选项'; }
+  else if (id === 'answer'){ answerQuestion(S.curQ.answer); msg = '本题直接算作答对'; }
+  else if (id === 'finalGamble'){
+    S.buffs.finalGamble = true;
+    if (b){ b.poolR = null; b.poolW = null; ensurePools(b); }
+    msg = '正确池全变「大成功」、错误池全变「破刀」';
+  }
   S.inv.splice(idx, 1);
+  if (NEED_QUIZ_ITEMS.includes(id)){ const hc = $('#qHintCharm'), ac = $('#qAnswer'); if (hc) hc.classList.add('hidden'); if (ac) ac.classList.add('hidden'); }
   log('day', `使用 ${m.name}`, msg);
   toast(`${m.name}：${msg}。`);
   render();
@@ -2271,7 +2335,7 @@ function renderStatus(){
     + `<br>错误池 <b class="dm">损 ${cnt(b.poolW,'damage')}</b> / <b class="bk">破 ${cnt(b.poolW,'break')}</b>`
     + (cnt(b.poolW,'hold') ? ` / <b class="hd">维 ${cnt(b.poolW,'hold')}</b>` : '')
     + (cnt(b.poolW,'success') ? ` / <b class="sc">成 ${cnt(b.poolW,'success')}</b>` : '')
-    + `　连对 ${b.streakOk % 3}/3 · 连错 ${b.streakBad}/3 · 维持 ${b.maintain}`;
+    + `<br>连对 ${b.streakOk % 3}/3 · 连错 ${b.streakBad}/3 · 维持 ${b.maintain}`;
   const rs = activeSchools();
   $('#schoolLine').innerHTML = rs.length
     ? '流派共鸣：' + rs.map(k => `<span style="color:${SCHOOLS[k].color}">${SCHOOLS[k].name}</span>`).join(' · ')
@@ -2344,7 +2408,7 @@ function startDay(first){
   if (S.relics.includes('ledger')) S.quota = Math.max(30, Math.round(S.quota * 0.92));
   S.offered = false;
   S.penalizedToday = false;
-  S.buffs.coal = false; S.buffs.stone = false; S.buffs.saliva = false; S.buffs.mithril = 0; S.buffs.file = false; S.buffs.gloves = false; S.buffs.bandage = false; S.buffs.talisman = false; S.buffs.chisel = false; S.buffs.lamp = false; S.buffs.charcoal = false; S.buffs.coin = false;
+  S.buffs.coal = false; S.buffs.stone = false; S.buffs.saliva = false; S.buffs.mithril = 0; S.buffs.file = false; S.buffs.gloves = false; S.buffs.bandage = false; S.buffs.talisman = false; S.buffs.chisel = false; S.buffs.lamp = false; S.buffs.charcoal = false; S.buffs.coin = false; S.buffs.finalGamble = false;
   const n = RULES.BLADES_PER_DAY + (S.relics.includes('ticket') ? 1 : 0);
   // 跨天保留：昨天没用上的空白剑胚计入今天，今天的刷新量仍是 n（所以总数 = n + 剩余）
   const carried = first ? [] : S.blades.filter(b => b.state === 'blank');
@@ -2428,7 +2492,6 @@ function takeBillet(){
 /* 加热窗口：火绒盒 / 隔热手套会把起点往下压，等于给更多容错 */
 function heatWindow(){
   let lo = RULES.HEAT_WINDOW[0], hi = RULES.HEAT_WINDOW[1];
-  if (S.relics.includes('tinder')) lo -= 0.15;
   if (S.buffs.gloves) lo -= 0.15;
   return [Math.max(0.12, lo), Math.min(0.97, hi)];
 }
@@ -2510,6 +2573,7 @@ function burnBlade(){
   cancelAnimationFrame(S.heatRAF);
   $('#heatGauge').setAttribute('opacity','0');
   if (S.buffs.stone){ S.buffs.stone = false; toast('补炉石生效：这次没烧毁。'); S.heatT = 0; beginHeat(); return; }
+  if (S.relics.includes('tinder')){ toast('火绒盒生效：剑胚不会烧毁。'); S.heatT = 0; beginHeat(); return; }
   b.state = 'broken';
   S.bladesBroken++;
   log('break', '烧毁', '剑胚报废');
@@ -2588,6 +2652,12 @@ function openQuestion(inspMode){
   m.textContent = (!on && b.maintain <= 0) ? '维持（无次数）' : '维持 · 跳过';
   $('#qMaintainHint').textContent = on ? '入神中：维持不限次数 · 答对答错都直接落锤'
     : (b.maintain > 0 ? '跳过这题：评级不变，仍然给出解析' : `再锻打 ${10 - (b.hammers % 10)} 次补充 1 次维持`);
+  const hcBtn = $('#qHintCharm'), ansBtn = $('#qAnswer');
+  if (hcBtn){ hcBtn.classList.toggle('hidden', !S.inv.includes('hintCharm')); hcBtn.disabled = false; }
+  if (ansBtn){ ansBtn.classList.toggle('hidden', !S.inv.includes('answer')); ansBtn.disabled = false; }
+  const hcBtn2 = $('#qHintCharm'), ansBtn2 = $('#qAnswer');
+  if (hcBtn2) hcBtn2.onclick = () => useInv('hintCharm');
+  if (ansBtn2) ansBtn2.onclick = () => useInv('answer');
   open('mQuiz');
   S.busy = true;
   setTimeout(() => S.busy = false, 160);
@@ -2632,10 +2702,15 @@ function resolveAnswer(b, correct){
     return { kind: t };
   }
   b.streakBad++; b.streakOk = 0;
-  const limit = S.relics.includes('steady') ? 4 : 3;
+  const limit = 3;
   if (b.streakBad >= limit && !inInsp(b)){
     if (absorbBreak(b)) return { kind: 'damage', forced: true };
     return { kind: 'break', forced: true };
+  }
+  if (S.relics.includes('spring') && !b.springUsed){
+    b.springUsed = true;
+    relicFx('悔恨的发条', '这一签取消');
+    return { kind: 'void' };
   }
   let t = drawFrom(b, 'W');
   if (inInsp(b) && t === 'break') t = 'damage';   // 入神：破坏临时转为损伤
@@ -2648,12 +2723,15 @@ function applyOutcome(b, kind){
     case 'big': applyGain(b, true); return `×${RULES.M_BIG}`;
     case 'damage': applyDamage(b); return `×${RULES.M_DAMAGE}`;
     case 'break': breakBlade(b); return '剑毁';
+    case 'void': return '已取消';
     case 'hold': {
       let extra = 0;
-      if (S.relics.includes('patience')) extra += 0.05;
-      if (resonance('hold')) extra += 0.03;
+      if (S.relics.includes('roc')){ extra += 0.10; relicFx('隼羽', '+10%'); }
+      if (S.relics.includes('patience')){ extra += 0.05; relicFx('老铁匠的耐心', '+5%'); }
+      if (resonance('hold')){ extra += 0.03; relicFx('维持共鸣', '+3%'); }
       if (extra) b.value = Math.round(b.value * (1 + extra));
-      if (S.relics.includes('silence') || resonance('hold')) b.insp++;
+      if (S.relics.includes('silence')){ b.insp++; relicFx('静海', '+1 充能'); }
+      else if (resonance('hold')){ b.insp++; relicFx('维持共鸣', '+1 充能'); }
       return extra ? `+${Math.round(extra * 100)}%` : '±0';
     }
     default: return '±0';
@@ -2661,11 +2739,11 @@ function applyOutcome(b, kind){
 }
 /* 断刀吸收：羊毛衬（每把刀 1 次）→ 布条（今日 1 次） */
 function absorbBreak(b){
-  if (S.relics.includes('wool') && !b.woolUsed){ b.woolUsed = true; log('insp','羊毛衬','断刀变损伤'); return true; }
+  if (S.relics.includes('wool') && !b.woolUsed){ b.woolUsed = true; relicFx('羊毛衬', '断刀→损伤'); log('insp','羊毛衬','断刀变损伤'); return true; }
   if (S.buffs.bandage){ S.buffs.bandage = false; log('insp','布条','断刀被抵消'); return true; }
   return false;
 }
-const KIND_LABEL = { success:'成功', big:'大成功', damage:'损伤', break:'断刀', hold:'维持', maintain:'维持' };
+const KIND_LABEL = { success:'成功', big:'大成功', damage:'损伤', break:'断刀', hold:'维持', maintain:'维持', void:'取消' };
 /* 答完题先只公布对错与解析；落锤才出结果 */
 function showVerdict(correct, q, isMaintain){
   const fb = $('#qFb');
@@ -2705,6 +2783,7 @@ function settleStrike(auto){
   const b = S.active;
   if (!b || b.state !== 'hot' || S.busy) return;
   S.busy = true;
+  relicFxReset();
   swingOnce();
   if (!inInsp(b)) b.insp++;   // 入神里的作答不计入下一次入神所需的锤数
   const res = resolveAnswer(b, S.lastAnswer);
@@ -2770,11 +2849,20 @@ function closeQuiz(){
 }
 function strike(){ openQuestion(false); }
 function applyDamage(b){
-  if (S.relics.includes('apron') && !b.apronUsed){ b.apronUsed = true; }
-  else b.level = Math.max(1, b.level - 1);
-  b.value = Math.max(10, b.value * (resonance('damage') ? 0.85 : RULES.M_DAMAGE));
+  const before = b.value;
+  b.level = Math.max(1, b.level - 1);
+  const mult = S.relics.includes('steady') ? 0.9 : (resonance('damage') ? 0.85 : RULES.M_DAMAGE);
+  if (S.relics.includes('steady')) relicFx('稳手', '×0.9');
+  b.value = Math.max(10, b.value * mult);
+  if (S.relics.includes('apron') && !b.apronUsed){
+    b.apronUsed = true;
+    const lost = Math.max(0, before - b.value);
+    b.value += lost * 2;
+    relicFx('铁匠围裙', '返还价值 +' + Math.round(lost * 2));
+  }
   b.dmg++;
   if (S.relics.includes('bloodQuench')) b.blood = true;
+  if (S.relics.includes('hundredForge')) b.forgeStacks = (b.forgeStacks || 0) + 1;
   // 损伤：错误池里 1 张「损伤」当场变成「破坏」（破坏率会真的往上走）
   ensurePools(b);
   const i = b.poolW.indexOf('damage');
@@ -2790,13 +2878,14 @@ function applyGain(b, big){
     // 满级后只加价值（原作 30 级上限，被玩家吐槽过）
     b.value *= big ? 1.5 : 1.2;
   }
-  if (S.relics.includes('whet')) b.value *= 1.10;
   if (S.buffs.file) b.value *= 1.08;
-  if (S.relics.includes('hammerSong') && b.streakOk >= 2) b.value *= 1.06;
-  if (S.relics.includes('scar') && b.dmg > 0) b.value *= 1 + Math.min(0.3, b.dmg * 0.06);
-  if (b.blood){ b.value *= 1.5; b.blood = false; }
-  if (big && S.relics.includes('bellows')) b.value *= 1.2;
-  if (big && resonance('crit')) b.value *= 1.5;
+  if (S.relics.includes('whet')){ b.value *= 1.10; relicFx('磨刀石', '+10%'); }
+  if (S.relics.includes('hammerSong') && b.streakOk >= 2){ b.value *= 1.06; relicFx('锤歌', '+6%'); }
+  if (S.relics.includes('scar') && b.dmg > 0){ const f = Math.min(0.3, b.dmg * 0.06); b.value *= 1 + f; relicFx('伤痕纹', '+' + Math.round(f * 100) + '%'); }
+  if (b.blood){ b.value *= 1.5; b.blood = false; relicFx('血淬', '×1.5'); }
+  if (b.forgeStacks > 0){ const m = Math.pow(1.3, b.forgeStacks); b.value *= m; relicFx('百炼成钢', '×' + m.toFixed(2) + '（' + b.forgeStacks + ' 层）'); b.forgeStacks = 0; }
+  if (big && S.relics.includes('bellows')){ b.value *= 1.2; relicFx('风箱', '+20%'); }
+  if (big && resonance('crit')){ b.value *= 1.5; relicFx('暴击共鸣', '×1.5'); }
 }
 function putBack(){
   const b = S.active;
