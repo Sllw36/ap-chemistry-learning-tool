@@ -2289,29 +2289,30 @@ function renderActions(){
   const a = $('#actions');
   const b = S.active;
   const can = (cond) => cond ? '' : 'disabled';
+  /* 只要有可投的剑（空白剑胚 / 刀架成品 / 砧上这把），就能换遗物 */
+  const relicBtn = `<button class="btn relic" id="aRelic" ${can(relicPool() > 0)}>献剑换遗物</button>`;
   if (S.scene === 'over'){ a.innerHTML = `<button class="btn primary wide" id="aRestart">再来一局</button>`; bind(); return; }
   if (!b){
     a.innerHTML = `<button class="btn primary" id="aTake" ${can(S.blades.some(x=>x.state==='blank'))}>取剑胚 · 进熔炉</button>
-      <button class="btn ghost" id="aEndDay">收工</button>`;
+      <button class="btn ghost" id="aEndDay">收工</button>` + relicBtn;
     bind(); return;
   }
   if (b.state === 'heating'){
-    a.innerHTML = `<button class="btn primary" id="aPull">取出 · 上砧</button>`;
+    a.innerHTML = `<button class="btn primary" id="aPull">取出 · 上砧</button>` + relicBtn;
     bind(); return;
   }
   if (b.state === 'hot'){
     a.innerHTML = `<button class="btn primary" id="aStrike">敲击 · 做题</button>
       <button class="btn gold" id="aTribute" ${can(b.value >= 1)}>放上贡台</button>
-      <button class="btn relic" id="aRelic" ${can(S.relics.length < 3)}>献剑换遗物</button>
-      <button class="btn ghost" id="aBench">放回剑架</button>`;
+      <button class="btn ghost" id="aBench">放回剑架</button>` + relicBtn;
     bind(); return;
   }
   if (b.state === 'tributing'){
     a.innerHTML = `<button class="btn gold" id="aRing">摇铃 · 上贡</button>
-      <button class="btn ghost" id="aBack">把剑拿回来</button>`;
+      <button class="btn ghost" id="aBack">把剑拿回来</button>` + relicBtn;
     bind(); return;
   }
-  a.innerHTML = '';
+  a.innerHTML = relicBtn;
 }
 function bind(){
   const q = id => document.getElementById(id);
@@ -2973,8 +2974,6 @@ function rollRelicOffer(exclude){
   S.relicOffer = [first].concat(rest).slice(0, 2);
 }
 function renderRelicOffer(){
-  const b = S.active;
-  if (!b) return;
   const opts = S.relicOffer.map(id => RELICS[id]);
   $('#relicNote').innerHTML = `把剑投进机器换 1 件遗物。卡上的 <b>×N</b> 就是价码：<b>要投入 N 把剑</b>。<br>
     <span style="color:#7d9095;font-size:9.5px">付款顺序：空白剑胚 → 刀架上的成品 → 最后才动砧上这把。你现在有 <b>${relicPool()}</b> 把可用。看不清就花 ${RELIC_REROLL_COST} 金币换一批。</span>`;
@@ -2999,7 +2998,7 @@ function renderRelicOffer(){
   }
 }
 function rerollRelic(){
-  if (!S.active) return;
+  if (!S.relicOffer.length) rollRelicOffer();
   if (S.gold < RELIC_REROLL_COST){ toast(`需要 ${RELIC_REROLL_COST} 金币才能换一批。`, true); return; }
   S.gold -= RELIC_REROLL_COST;
   rollRelicOffer(S.relicOffer);
@@ -3008,9 +3007,8 @@ function rerollRelic(){
   toast('遗物机器换了一批。');
 }
 function openRelic(){
-  const b = S.active;
-  if (!b) return;
-  if (S.relics.length >= RULES.RELIC_SLOTS){ toast(`遗物位已满（${RULES.RELIC_SLOTS} 件）。`, true); return; }
+  if (relicPool() <= 0){ toast('现在没有可以投入的剑。', true); return; }
+  if (S.relics.length >= RULES.RELIC_SLOTS){ toast(`遗物位已满（${RULES.RELIC_SLOTS} 件），先去遗物台撤下一件。`, true); return; }
   const pool = RELIC_IDS.filter(id => !S.relics.includes(id));
   if (!pool.length){ toast('所有遗物都拿到了。', true); return; }
   // 已有有效报价就沿用，避免关掉再开白嫖一次重掷
@@ -3027,10 +3025,11 @@ function relicPool(){
   return blanks + S.rack.length + (S.active && S.active.state === 'hot' ? 1 : 0);
 }
 function doRelic(id){
-  const b = S.active;
-  if (!b) return;
+  const b = S.active;          // 可能为 null：只用剑胚 / 刀架也能换
+  const hadActive = !!b;
   const cost = (RELICS[id] && RELICS[id].cost) || 1;
   if (relicPool() < cost){ toast(`换「${RELICS[id].name}」需要 ${cost} 把剑，你现在只有 ${relicPool()} 把。`, true); return; }
+  if (S.relics.length >= RULES.RELIC_SLOTS){ toast(`遗物位已满（${RULES.RELIC_SLOTS} 件），先去遗物台撤下一件。`, true); return; }
 
   // 付款顺序：先吃空白剑胚 → 再吃刀架成品 → 最后才动砧上这把
   let need = cost;
@@ -3040,7 +3039,7 @@ function doRelic(id){
     S.blades.splice(i, 1); need--;
   }
   while (need > 0 && S.rack.length){ const x = S.rack.pop(); x.state = 'relic'; need--; }
-  if (need > 0 && b.state === 'hot'){ b.state = 'relic'; S.active = null; S.scene = 'idle'; need--; }
+  if (need > 0 && b && b.state === 'hot'){ b.state = 'relic'; S.active = null; S.scene = 'idle'; need--; }
 
   S.relics.push(id);
   S.relicsMade++;
@@ -3049,7 +3048,7 @@ function doRelic(id){
   log('insp', `获得遗物 · ${RELICS[id].name}`, RELICS[id].desc.slice(0,12));
   render();
   toast(`获得遗物「${RELICS[id].name}」。`);
-  if (!S.active) checkDayStall();
+  if (hadActive && !S.active) checkDayStall();
 }
 
 /* ============================================================
