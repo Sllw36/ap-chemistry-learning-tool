@@ -150,6 +150,17 @@ select{
 .anim-detail{font-size:12.5px;color:var(--muted);line-height:1.78;margin-top:10px;padding:10px 13px;border:1px dashed var(--line);border-radius:8px;background:var(--bg)}
 .anim-detail b{color:var(--ink)}
 .anim-detail .hl{color:var(--phy);font-weight:600}
+/* ===== U3 IMF 形成机理 ===== */
+.imf-mech{display:grid;gap:12px;margin-top:12px}
+.imf-mech article{border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;background:var(--bg)}
+.imf-mech h4{margin:0 0 2px;font-size:14.5px;color:var(--ink)}
+.imf-mech h4 span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--phy);margin-left:8px;vertical-align:middle}
+.imf-mech .sub{font-size:11.5px;color:var(--muted);margin:0 0 8px}
+.imf-steps{margin:0;padding-left:18px;font-size:12.5px;line-height:1.85;color:var(--muted)}
+.imf-steps li{margin:4px 0}
+.imf-steps b{color:var(--ink)}
+.imf-mech .hint{margin-top:9px;background:var(--card)}
+@media (max-width:699px){.imf-mech article{padding:12px 13px}.imf-steps{font-size:12px;line-height:1.8}}
 .anim-detail ul{margin:6px 0 0;padding-left:18px}
 .anim-detail li{margin:2px 0}
 .lewis-gal{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
@@ -4678,3 +4689,45 @@ html[data-theme="dark"] .geo-studio::before {
 .geo-modal .geo-studio .masthead{padding-right:112px}
 @media (max-width:720px){.geo-studio .geo-close{top:12px;right:14px;height:34px;padding:0 12px}.geo-modal .geo-studio .masthead{padding-right:100px}}
 /* ===== AP_GEO_INTEGRATION:END (styles) ===== */
+
+/* ===== AP_FISH_GAME:BEGIN : styles ===== */
+/* 练习页右下角的「小游戏」入口 */
+.fish-fab{position:fixed;right:24px;bottom:24px;z-index:45;display:none;align-items:center;gap:9px;height:52px;padding:0 20px 0 16px;border:0;border-radius:26px;background:var(--md-sys-color-primary,#2b6de9);color:var(--md-sys-color-on-primary,#fff);font:600 14px/1 var(--sans,system-ui);letter-spacing:.02em;cursor:pointer;box-shadow:0 10px 26px rgba(12,32,58,.30),0 2px 6px rgba(12,32,58,.18);transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .18s ease,filter .18s ease}
+.fish-fab[data-show="1"]{display:inline-flex}
+.fish-fab:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(12,32,58,.36),0 3px 8px rgba(12,32,58,.2);filter:brightness(1.05)}
+.fish-fab:active{transform:translateY(0) scale(.98)}
+.fish-fab svg{width:23px;height:23px;flex:0 0 23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.fish-fab:focus-visible{outline:2px solid var(--md-sys-color-on-primary,#fff);outline-offset:3px}
+@media (max-width:699px){.fish-fab{right:14px;bottom:calc(78px + env(safe-area-inset-bottom));height:46px;padding:0 16px 0 13px;font-size:13px;gap:7px}.fish-fab svg{width:20px;height:20px;flex-basis:20px}}
+
+/* 全屏小游戏：顶部一条极窄的控制栏，避免遮挡游戏自身的 HUD */
+.fish-modal{padding:0;background:#04121a;align-items:stretch;justify-content:stretch}
+.fish-shell{display:flex;flex-direction:column;width:100%;height:100%;min-height:0}
+.fish-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;height:46px;padding:0 12px 0 16px;background:#061820;border-bottom:1px solid rgba(122,206,226,.14);color:#bfe4ec}
+.fish-bar-title{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 var(--sans,system-ui);letter-spacing:.1em;text-transform:uppercase;color:#8fc6d4}
+.fish-bar-title svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.fish-exit{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:9px;border:1px solid rgba(140,214,232,.26);background:rgba(10,34,44,.9);color:#d4eef4;font:600 12px/1 var(--sans,system-ui);cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.fish-exit:hover{background:rgba(22,62,76,.95);border-color:rgba(160,230,246,.46);color:#fff}
+.fish-exit span{font:600 9px/1 var(--mono,monospace);padding:2px 4px;border-radius:4px;border:1px solid rgba(140,214,232,.24);color:#8fb6c2}
+.fish-body{position:relative;flex:1;min-height:0;background:#04121a}
+.fish-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#04121a}
+.fish-bar-actions{display:flex;align-items:center;gap:8px}
+.fish-exit.fish-ghost{background:transparent;border-color:rgba(140,214,232,.18);color:#9fc4ce}
+.fish-exit.fish-ghost:hover{background:rgba(22,62,76,.6);border-color:rgba(160,230,246,.42);color:#dff3f8}
+.fish-bar-title b{font-weight:600;letter-spacing:.08em}
+.fish-picker{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:26px;padding:32px;flex-wrap:wrap;overflow:auto;background:radial-gradient(circle at 50% 0%,rgba(90,190,205,.10),transparent 62%),#04121a}
+.fish-pick{display:flex;flex-direction:column;gap:10px;width:min(340px,42vw);padding:26px 24px;border-radius:20px;border:1px solid rgba(130,200,210,.18);background:linear-gradient(160deg,rgba(10,32,44,.96),rgba(4,14,20,.98));color:#cfe8ee;text-align:left;cursor:pointer;transition:transform .18s cubic-bezier(.2,.7,.2,1),border-color .18s ease,box-shadow .18s ease}
+.fish-pick:hover{transform:translateY(-4px);border-color:rgba(150,225,240,.5);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.fish-pick:active{transform:translateY(-1px)}
+.fish-pick:focus-visible{outline:2px solid #8fe6f5;outline-offset:3px}
+.fish-pick-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;border:1px solid rgba(150,225,240,.35);color:#a8e8f5;font:700 20px/1 var(--sans,system-ui);background:rgba(120,220,240,.08)}
+.fish-pick b{font:600 17px/1.35 var(--sans,system-ui);color:#e6fbff}
+.fish-pick small{font:400 12.5px/1.7 var(--sans,system-ui);color:#7fa6b1}
+.fish-frame[hidden],.fish-picker[hidden],.fish-exit[hidden]{display:none !important}
+/* 从小游戏里打开的公式表/周期表需要盖在游戏弹窗之上 */
+#modalFormula.modal-above{z-index:1200}
+.fish-bar-title{min-width:0;overflow:hidden}
+.fish-bar-title b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:699px){.fish-bar-actions{gap:6px}.fish-bar-actions .fish-exit{padding:0 9px;font-size:11px}.fish-bar-actions .fish-exit span{display:none}}
+@media (max-width:699px){.fish-picker{gap:14px;padding:18px}.fish-pick{width:100%;padding:20px 18px}.fish-pick b{font-size:15.5px}}
+/* ===== AP_FISH_GAME:END (styles) ===== */

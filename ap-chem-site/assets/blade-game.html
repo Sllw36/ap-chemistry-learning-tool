@@ -1,0 +1,3323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>锻刀纳贡 · ForgeTax 2D</title>
+<style>
+/* ============================================================
+   锻刀纳贡 / FORGE TAX 2D
+   ForgeTax 机制的 2D 复刻：熔炉 → 铁砧抽签 → 入神 → 贡台 → 遗物机。
+   所有概率以「30 张签」的实体牌组表达，可数、可看。
+   ============================================================ */
+:root{
+  --bg:#08090c; --bg2:#0d1015; --panel:#11151b; --panel2:#161b23;
+  --line:rgba(214,226,232,.12); --line2:rgba(214,226,232,.06);
+  --ink:#eef4f4; --muted:#93a5aa; --dim:#5f7278;
+  --orange:#ff7a2f; --orange2:#ffb15c; --gold:#ffd166;
+  --cyan:#65f5df; --red:#ff5a64; --red2:#ff9a74; --green:#7dffb2; --violet:#b79bff;
+  --display:"Songti SC","STSong","SimSun","Noto Serif SC",serif;
+  --body:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+  --mono:"Cascadia Mono",Consolas,"SFMono-Regular",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.36}
+.hidden{display:none!important}
+::selection{background:rgba(255,122,47,.3)}
+
+#app{height:100vh;display:flex;flex-direction:column;max-width:1500px;margin:0 auto}
+
+/* ---------- HUD ---------- */
+.hud{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;flex:0 0 auto}
+.hud .brand{display:flex;align-items:center;gap:8px;margin-right:6px}
+.hud .mark{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:linear-gradient(150deg,#ff8a3a,#8a3a12);font-family:var(--display);font-size:14px;color:#1a0d05;font-weight:900}
+.hud h1{font-size:12px;margin:0;letter-spacing:.12em;font-weight:800}
+.hud .sub{font-family:var(--mono);font-size:6px;color:var(--dim);letter-spacing:.16em}
+.stat{display:flex;align-items:baseline;gap:5px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:6.5px;color:var(--dim);letter-spacing:.08em}
+.stat b{font-family:var(--display);font-size:13px;color:var(--ink);letter-spacing:0}
+.stat.gold b{color:var(--gold)}
+.stat.quota b{color:var(--orange2)}
+.stat.day b{color:var(--ink)}
+.patience{display:flex;gap:3px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+.patience i{width:9px;height:12px;border-radius:2px;background:#2a2226;display:block;position:relative}
+.patience i.on{background:linear-gradient(180deg,#ffb15c,#e0483f);box-shadow:0 0 8px rgba(255,122,47,.5)}
+.hud .spacer{flex:1}
+.icon-btn{width:26px;height:26px;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted);font-family:var(--mono);font-size:9px}
+.icon-btn:hover{border-color:rgba(101,245,223,.4);color:var(--cyan)}
+
+/* ---------- scene ---------- */
+.stage-wrap{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#stage{display:block;width:100%;height:100%;flex:1 1 auto;background:linear-gradient(#0a0c10 0%,#12100f 62%,#1a1310 100%)}
+.shake{animation:shake .42s ease}
+@keyframes shake{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(-11px,5px) rotate(-.4deg)}28%{transform:translate(9px,-7px) rotate(.35deg)}44%{transform:translate(-8px,-3px) rotate(-.3deg)}62%{transform:translate(7px,4px) rotate(.25deg)}78%{transform:translate(-4px,-2px) rotate(-.15deg)}90%{transform:translate(2px,1px) rotate(0)}}
+
+/* floating numbers */
+.float{position:absolute;font-family:var(--display);font-weight:900;pointer-events:none;text-shadow:0 2px 12px rgba(0,0,0,.8);animation:floatUp 1.1s ease-out forwards;z-index:6}
+@keyframes floatUp{0%{opacity:0;transform:translateY(6px) scale(.85)}16%{opacity:1;transform:translateY(0) scale(1.06)}100%{opacity:0;transform:translateY(-52px) scale(1)}}
+
+/* billet rack */
+.rack{display:flex;align-items:center;gap:8px;padding:6px 14px 8px;flex:0 0 auto}
+.rack .label{font-family:var(--mono);font-size:6px;color:var(--dim);letter-spacing:.14em;margin-right:2px}
+.billet{width:112px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:linear-gradient(160deg,rgba(20,26,33,.95),rgba(10,13,18,.92));text-align:left;transition:transform .16s,border-color .16s}
+.billet:hover:not(:disabled){transform:translateY(-2px);border-color:rgba(255,177,92,.45)}
+.billet b{display:block;font-size:10px;color:#e6efee}
+.billet span{display:block;font-family:var(--mono);font-size:6px;color:var(--dim);letter-spacing:.08em;margin-top:2px}
+.billet.empty{opacity:.4}
+.billet.gone{border-style:dashed;opacity:.34}
+
+/* ---------- bottom ---------- */
+.bottom{display:flex;gap:10px;padding:0 14px 12px;flex:0 0 auto;align-items:stretch}
+.panel{border:1px solid var(--line);border-radius:10px;background:linear-gradient(160deg,rgba(17,23,30,.94),rgba(8,11,15,.92))}
+.statuscard{flex:0 0 268px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.statuscard .row{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:6.5px;color:var(--dim);letter-spacing:.08em}
+.statuscard .row b{font-family:var(--display);font-size:14px;color:var(--ink);letter-spacing:0}
+.statuscard .value b{font-size:19px;color:var(--gold)}
+.meter{height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:2px}
+.meter i{display:block;height:100%;border-radius:99px;transition:width .25s}
+.meter i.risk{background:linear-gradient(90deg,#ffb15c,#ff5a64)}
+.meter i.insp{background:linear-gradient(90deg,#65f5df,#b79bff)}
+.deckcount{font-family:var(--mono);font-size:7px;color:#7d9095;letter-spacing:.02em;margin-top:6px;padding-top:6px;border-top:1px solid var(--line2);line-height:1.5}
+.deckcount b{font-weight:500}
+.school-line{font-family:var(--mono);font-size:7px;color:#9ef2e6;letter-spacing:.04em;margin-top:4px}
+.school-line:empty{display:none}
+.deckcount .bk{color:var(--red2)}
+.deckcount .dm{color:var(--orange2)}
+.deckcount .hd{color:#8fa2a4}
+.deckcount .sc{color:var(--green)}
+.deckcount .bg{color:var(--gold)}
+.inv-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-bottom:2px}
+.inv-bar.hidden{display:none}
+.inv-tip{font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:.1em;margin-right:2px}
+.inv-chip{display:flex;align-items:center;gap:6px;border:1px solid rgba(143,216,255,.28);background:rgba(143,216,255,.06);border-radius:7px;padding:3px 5px 3px 9px;font-size:10px;color:#d6eaf4}
+.inv-chip button{border:1px solid rgba(125,255,178,.45);color:#a6f7c8;background:rgba(125,255,178,.1);border-radius:5px;padding:2px 8px;font-size:9px;font-weight:700;letter-spacing:.05em}
+.inv-chip button:hover{background:rgba(125,255,178,.24);border-color:rgba(125,255,178,.75)}
+.shard{animation:shardOut .85s ease-out forwards}
+@keyframes shardOut{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
+.controls{flex:1 1 auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.btn{border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;background:rgba(255,255,255,.03);transition:transform .12s,background .16s,border-color .16s}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,#ff9a4a,#ff6a22);color:#1b0d04;border-color:rgba(255,154,74,.6);box-shadow:0 6px 22px rgba(255,106,34,.22)}
+.btn.gold{background:linear-gradient(135deg,#ffe09a,#ffc857);color:#201506;border-color:rgba(255,209,102,.6);font-weight:800}
+.btn.relic{border-color:rgba(183,155,255,.4);color:#d9ccff;background:rgba(183,155,255,.09)}
+.btn.ghost{color:var(--muted)}
+.btn.wide{width:100%}
+.action-row{display:flex;gap:8px;flex-wrap:wrap}
+.action-row .btn{flex:1;min-width:110px}
+.log{flex:1 1 auto;overflow:hidden;display:flex;flex-direction:column;gap:3px;justify-content:flex-end}
+.log-row{font-family:var(--mono);font-size:7px;color:#7d9095;display:flex;gap:7px;letter-spacing:.02em}
+.log-row b{color:#cad9d8;font-weight:500}
+.log-row .d{color:var(--dim)}
+.log-row.big b{color:var(--gold)}
+.log-row.success b{color:var(--green)}
+.log-row.damage b{color:var(--orange2)}
+.log-row.break b{color:var(--red2)}
+.log-row.insp b{color:var(--cyan)}
+
+/* ---------- modals ---------- */
+.modal{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgba(4,6,9,.9);backdrop-filter:blur(8px)}
+.card{width:min(720px,100%);max-height:calc(100vh - 32px);overflow:auto;border:1px solid rgba(214,226,232,.16);border-radius:14px;padding:18px;background:linear-gradient(165deg,#141b22,#0a0e13);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.card.narrow{width:min(520px,100%)}
+.card h2{margin:4px 0 8px;font-family:var(--display);font-size:26px;letter-spacing:-.03em}
+.eyebrow{font-family:var(--mono);font-size:6.5px;letter-spacing:.16em;color:var(--cyan)}
+.card p{font-size:11px;line-height:1.75;color:#9db0b1;margin:0 0 10px}
+.card p b{color:#e2eeea}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pick{text-align:left;border:1px solid var(--line);border-radius:9px;padding:10px;background:rgba(255,255,255,.02);transition:border-color .16s,background .16s,transform .16s}
+.pick:hover:not(:disabled){border-color:rgba(255,177,92,.5);background:rgba(255,177,92,.05);transform:translateY(-1px)}
+.pick .t{display:flex;justify-content:space-between;font-family:var(--mono);font-size:6px;color:var(--dim);letter-spacing:.1em}
+.pick .t b{color:var(--gold);font-size:9px}
+.pick h4{margin:6px 0 3px;font-size:13px}
+.pick small{display:block;font-size:9.5px;line-height:1.6;color:#8fa2a4}
+.q-topic{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--cyan);margin:10px 0 6px}
+.q-stem{font-size:14px;line-height:1.55;color:#eaf3f2;letter-spacing:.01em}
+.q-cn{margin-top:6px;font-size:11px;line-height:1.7;color:#8fa2a4}
+.q-opts{display:grid;gap:7px;margin-top:14px}
+.q-opt{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:rgba(255,255,255,.02);font-size:12px;line-height:1.5;transition:border-color .15s,background .15s}
+.q-opt:hover:not(:disabled){border-color:rgba(255,177,92,.45);background:rgba(255,177,92,.05)}
+.q-opt .letter{flex:0 0 20px;height:20px;border-radius:5px;display:grid;place-items:center;border:1px solid rgba(204,232,236,.2);font-family:var(--mono);font-size:9px;color:#9db0b1}
+.q-opt.correct{border-color:rgba(125,255,178,.6);background:rgba(125,255,178,.1)}
+.q-opt.correct .letter{border-color:rgba(125,255,178,.6);color:#7dffb2}
+.q-opt.wrong{border-color:rgba(255,90,100,.6);background:rgba(255,90,100,.1)}
+.q-opt.wrong .letter{border-color:rgba(255,90,100,.6);color:#ff9a9f}
+.q-opt.dim{opacity:.4}
+.q-fb{margin-top:14px;border-top:1px solid var(--line2);padding-top:12px}
+.q-fb-head{display:flex;align-items:baseline;gap:10px;font-size:15px;font-weight:800}
+.q-fb-head .d{margin-left:auto;font-family:var(--mono);font-size:10px}
+.q-expl{margin-top:7px;font-size:11px;line-height:1.75;color:#9db0b1}
+.q-expl b{color:#dcebe7}
+.q-fb.ok .q-fb-head{color:#7dffb2}
+.q-fb.big .q-fb-head{color:#ffd166}
+.q-fb.bad .q-fb-head{color:#ff9a9f}
+.q-fb.keep .q-fb-head{color:#65f5df}
+.unit-card{text-align:left;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:rgba(255,255,255,.02);transition:border-color .15s,transform .15s}
+.unit-card:hover{border-color:rgba(255,177,92,.5);transform:translateY(-1px)}
+.unit-card .u-id{font-family:var(--mono);font-size:6.5px;letter-spacing:.12em;color:var(--cyan)}
+.unit-card h4{margin:5px 0 3px;font-size:12px}
+.unit-card small{display:block;font-size:9px;line-height:1.5;color:#7d9095}
+
+.card-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.close-x{width:30px;height:30px;border:1px solid var(--line);border-radius:7px;color:#a9bcc0;font-size:18px;line-height:1;display:grid;place-items:center;flex:0 0 auto;background:rgba(255,255,255,.03)}
+.close-x:hover{border-color:rgba(255,90,100,.55);color:#ff9a9f;background:rgba(255,90,100,.1)}
+.map-table{width:100%;border-collapse:collapse;font-size:10px}
+.map-table th,.map-table td{border-bottom:1px solid var(--line2);padding:6px 4px;text-align:left;vertical-align:top;line-height:1.6}
+.map-table th{font-family:var(--mono);font-size:6.5px;letter-spacing:.12em;color:var(--dim);font-weight:400}
+.map-table td:first-child{color:#cfe0dd;white-space:nowrap}
+.map-table td:nth-child(2){color:#8fa2a4}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);opacity:0;padding:9px 16px;border-radius:8px;border:1px solid rgba(255,177,92,.35);background:rgba(18,14,10,.96);color:#ffd8a8;font-size:11px;letter-spacing:.04em;transition:opacity .2s,transform .2s;z-index:60;pointer-events:none;max-width:80vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.bad{border-color:rgba(255,90,100,.45);color:#ffb0b4}
+
+/* 验收栅栏 */
+#dragon{display:none}   /* 奶龙平时不出现，只在验收窗口里露眼睛 */
+#merchant{opacity:0;transform:translate(-86px,34px) scale(.8);transform-box:fill-box;transform-origin:center bottom;
+  transition:opacity .46s ease,transform .52s cubic-bezier(.2,.9,.3,1),filter .5s ease;filter:blur(7px)}
+#merchant.in{opacity:1;transform:translate(-86px,0) scale(1);filter:blur(0)}
+#merchant.out{opacity:0;transform:translate(-86px,-18px) scale(.84);filter:blur(6px);transition-duration:.4s}
+#mMerchant{background:rgba(4,6,9,.5)}   /* 背板调淡，能看见商人的虚影 */
+#gate{position:fixed;inset:0;z-index:58;background:#05060a;opacity:0;transition:opacity .26s ease}
+#gate.show{opacity:1}
+#gateArt{width:100%;height:100%;display:block}
+#gEye{transform:scale(.34);opacity:0;transition:transform .52s cubic-bezier(.2,.85,.3,1),opacity .42s ease}
+#gate.show #gEye{transform:scale(1);opacity:1}
+#gBarsL,#gBarsR,#gBarsH{transform:translateY(-660px)}
+#gate.show #gBarsL,#gate.show #gBarsR,#gate.show #gBarsH{transform:translateY(0);transition:transform .42s cubic-bezier(.3,1.35,.5,1)}
+#gBarsL,#gBarsR{transition:transform .42s cubic-bezier(.3,1.2,.5,1)}
+/* 失败：剑碎裂（不再合拢） */
+#gShards{opacity:0}
+#gShards polygon{transform-box:fill-box;transform-origin:center}
+#gate.show.shatter #gSword{opacity:0;transition:opacity .1s}   /* 需压过 .show 的 opacity:1 */
+#gate.shatter #gShards{opacity:1}
+#gate.shatter #gShards polygon{animation:shardFly 1s cubic-bezier(.15,.7,.35,1) forwards}
+@keyframes shardFly{
+  0%{transform:translate(0,0) rotate(0);opacity:1}
+  70%{opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}
+}
+#gate.hard #gShards polygon{animation-duration:1.25s}
+#gate.hard #gEye{transform:scale(.86);opacity:.62;transition:transform .8s ease,opacity .8s ease}
+#gSword{transform:translate(0,0) scale(1);opacity:0;transition:transform .55s cubic-bezier(.5,0,.8,0),opacity .3s}
+#gate.show #gSword{opacity:1}
+#gate.take #gSword{transform:translate(0,-196px) scale(.16);opacity:0}
+#gate.bad #gEye{filter:drop-shadow(0 0 26px #ff2a3a)}
+#gate.bad #gPupil{fill:#ff2a3a}
+#gate.bad #gateArt{animation:gateShake .42s ease}
+@keyframes gateShake{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,4px)}45%{transform:translate(8px,-5px)}70%{transform:translate(-5px,-2px)}}
+#mQuiz{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;justify-items:center;padding:10px;background:rgba(4,6,9,.94)}
+#mQuiz .card{width:min(1200px,96vw);max-height:calc(100vh - 20px);overflow:auto;padding:26px 32px}
+#mQuiz .q-stem{font-size:21px;line-height:1.5}
+.q-fig{margin:8px 0 4px}
+.q-fig img{display:block;width:100%;max-height:180px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(130,200,210,.16)}
+.q-fig-cap{margin-top:5px;font-size:10.5px;line-height:1.6;color:var(--dim)}
+.q-fig-loading{padding:12px;border:1px dashed rgba(130,200,210,.22);border-radius:10px;text-align:center;font-size:11px;color:var(--dim)}
+#mQuiz .q-cn{font-size:13px}
+#mQuiz .q-opt{font-size:14px;padding:13px 15px}
+#mQuiz .q-expl{font-size:12px}
+.q-timer{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.q-timer .bar{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.q-timer .bar i{display:block;height:100%;background:linear-gradient(90deg,#65f5df,#b79bff);width:100%}
+.q-timer b{font-family:var(--display);font-size:20px;color:#9ef2e6;letter-spacing:-.02em}
+
+/* svg bits */
+#theSword{transform-origin:0 0;transition:transform .5s cubic-bezier(.3,.8,.3,1)}
+#hammerSwing{transform-origin:0 0;transform:rotate(38deg)}
+#hammerSwing.swing{animation:swing .34s cubic-bezier(.3,0,.4,1)}
+@keyframes swing{0%{transform:rotate(38deg)}52%{transform:rotate(-8deg)}68%{transform:rotate(-2deg)}100%{transform:rotate(38deg)}}
+.flame{transform-box:fill-box;transform-origin:bottom center;animation:flick 1s ease-in-out infinite alternate}
+@keyframes flick{from{transform:scaleY(.86) scaleX(1.04)}to{transform:scaleY(1.14) scaleX(.94)}}
+.ember{animation:rise linear infinite}
+@keyframes rise{0%{opacity:0;transform:translateY(40px) scale(.6)}18%{opacity:.9}100%{opacity:0;transform:translateY(-160px) scale(1.1)}}
+.spark{transform-box:fill-box;transform-origin:center;animation:sparkOut .6s ease-out forwards}
+@keyframes sparkOut{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+.pulse{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:.95}}
+.dragon-eye{transition:fill .4s}
+.hit-flash{animation:flash .28s ease}
+@keyframes flash{0%{opacity:0}40%{opacity:.55}100%{opacity:0}}
+@media (max-width:820px){
+  .stage-wrap{flex:0 0 auto}
+  #stage{height:auto;aspect-ratio:1200/620}
+  .hud .sub{display:none}
+  .statuscard{flex:1 1 100%}
+  .bottom{flex-wrap:wrap}
+  .action-row .btn{min-width:0}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <div class="brand"><div class="mark">龙</div><div><h1>锻刀纳贡</h1><div class="sub">FORGE TAX // 2D</div></div></div>
+    <div class="stat day">第 <b id="hDay">1</b> / 30 天</div>
+    <div class="stat quota">今日贡品 <b id="hQuota">220</b></div>
+    <div class="stat gold">金币 <b id="hGold">0</b></div>
+    <div class="patience" id="hPatience" title="奶龙耐心"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="vaultBtn" title="遗物台">✦</button>
+    <button class="icon-btn" id="btnHelp" title="机制与对照">?</button>
+    <button class="icon-btn" id="btnRestart" title="重开">↻</button>
+  </header>
+
+  <div class="stage-wrap">
+    <svg id="stage" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid meet" role="img" aria-label="锻造洞窟">
+      <defs>
+        <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0a0c10"/><stop offset=".62" stop-color="#12100f"/><stop offset="1" stop-color="#1a1310"/>
+        </linearGradient>
+        <radialGradient id="lavGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ff7a2f" stop-opacity=".38"/><stop offset="1" stop-color="#ff7a2f" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="mouth" cx="50%" cy="70%" r="60%">
+          <stop offset="0" stop-color="#ffb15c" stop-opacity=".85"/><stop offset=".55" stop-color="#ff6a22" stop-opacity=".35"/><stop offset="1" stop-color="#3a1408" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#829096"/><stop offset=".35" stop-color="#cfdada"/><stop offset=".62" stop-color="#5c6a70"/><stop offset="1" stop-color="#3b474d"/>
+        </linearGradient>
+        <linearGradient id="hotSteel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff0c0"/><stop offset=".4" stop-color="#ffb15c"/><stop offset=".72" stop-color="#ff6a22"/><stop offset="1" stop-color="#a02f0c"/>
+        </linearGradient>
+        <linearGradient id="rainbow" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#65f5df"/><stop offset=".35" stop-color="#8fd8ff"/><stop offset=".6" stop-color="#b79bff"/><stop offset=".82" stop-color="#ffd166"/><stop offset="1" stop-color="#ff7a2f"/>
+        </linearGradient>
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="soft" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="14"/></filter>
+      </defs>
+
+      <rect width="1200" height="620" fill="url(#wall)"/>
+      <!-- floor -->
+      <path d="M0 512 L1200 500 L1200 620 L0 620 Z" fill="#0b0d11"/>
+      <path d="M0 512 L1200 500" stroke="#2a211c" stroke-width="2" opacity=".7"/>
+      <ellipse cx="600" cy="540" rx="520" ry="70" fill="url(#lavGlow)" opacity=".5"/>
+
+      <!-- dragon presence : eye in the dark upper right -->
+      <!-- 奶龙：平时不出现，只在验收时通过栅栏窗露出眼睛 -->
+      <g id="dragon" opacity=".97">
+        <ellipse id="dEyeGlow" cx="1000" cy="130" rx="130" ry="130" fill="#ff7a2f" opacity=".09" filter="url(#soft)"/>
+        <ellipse cx="977" cy="226" rx="17" ry="13" fill="#8a6a2a"/>
+        <ellipse cx="1023" cy="226" rx="17" ry="13" fill="#8a6a2a"/>
+        <path d="M936 156 q-26 -8 -30 12 q-4 18 14 22 q12 2 18 -10 Z" fill="#f6d24e" stroke="#d9a93f" stroke-width="2.4"/>
+        <path d="M1062 146 q26 -14 32 6 q4 16 -14 20 q-12 2 -18 -10 Z" fill="#f6d24e" stroke="#d9a93f" stroke-width="2.4"/>
+        <path d="M1000 26 C1036 26 1054 56 1054 96 C1054 122 1066 142 1066 172 C1066 204 1038 218 1000 218 C962 218 934 204 934 172 C934 142 946 122 946 96 C946 56 964 26 1000 26 Z"
+          fill="#f6d24e" stroke="#d9a93f" stroke-width="2.8"/>
+        <ellipse cx="1000" cy="166" rx="46" ry="42" fill="#fdf1b8" opacity=".95"/>
+        <g id="dEye" class="dragon-eye" fill="#15120e">
+          <ellipse cx="978" cy="84" rx="9" ry="10"/>
+          <ellipse cx="1022" cy="84" rx="9" ry="10"/>
+        </g>
+        <ellipse cx="978" cy="84" rx="16" ry="17" fill="none" stroke="#8fbf7a" stroke-width="6" opacity=".9"/>
+        <ellipse cx="1022" cy="84" rx="16" ry="17" fill="none" stroke="#8fbf7a" stroke-width="6" opacity=".9"/>
+        <circle cx="974" cy="79" r="3.4" fill="#fff"/>
+        <circle cx="1018" cy="79" r="3.4" fill="#fff"/>
+        <path d="M989 110 h22" stroke="#7a5a1e" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="954" cy="112" rx="11" ry="7" fill="#ffb3a7" opacity=".35"/>
+        <ellipse cx="1046" cy="112" rx="11" ry="7" fill="#ffb3a7" opacity=".35"/>
+      </g>
+
+      <!-- furnace -->
+      <g id="furnace">
+        <ellipse cx="176" cy="420" rx="150" ry="120" fill="url(#lavGlow)" opacity=".55"/>
+        <path d="M60 508 L60 322 Q60 258 176 258 Q292 258 292 322 L292 508 Z" fill="#1a1310" stroke="#4a352b" stroke-width="2"/>
+        <path d="M96 508 L96 336 Q96 292 176 292 Q256 292 256 336 L256 508 Z" fill="#0d0806"/>
+        <path id="fMouth" d="M96 508 L96 336 Q96 292 176 292 Q256 292 256 336 L256 508 Z" fill="url(#mouth)"/>
+        <g id="fFlames" fill="#ff8a3a" opacity=".92">
+          <path class="flame" d="M112 508 q12 -64 26 -6 q13 -76 28 -8 q10 -48 22 2 z" opacity=".55"/>
+          <path class="flame" d="M206 508 q10 -58 22 -4 q9 -66 20 -2 z" opacity=".6" style="animation-delay:.3s"/>
+          <path class="flame" d="M150 508 q14 -82 30 -10 q12 -62 26 -4 z" opacity=".8" style="animation-delay:.15s"/>
+        </g>
+        <!-- heat gauge -->
+        <g id="heatGauge" opacity="0">
+          <rect x="106" y="270" width="140" height="14" rx="7" fill="#0a0d10" stroke="rgba(255,177,92,.35)"/>
+          <rect x="110" y="274" width="132" height="6" rx="3" fill="rgba(255,255,255,.06)"/>
+          <rect id="heatFill" x="110" y="274" width="0" height="6" rx="3" fill="#ffb15c"/>
+          <rect id="heatMark" x="169" y="272" width="54" height="10" rx="3" fill="rgba(125,255,178,.28)" stroke="rgba(125,255,178,.6)" stroke-width="1"/>
+        </g>
+        <text x="176" y="534" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#5f7278" letter-spacing="2">FURNACE</text>
+      </g>
+
+      <!-- anvil -->
+      <g id="anvil">
+        <ellipse cx="560" cy="500" rx="150" ry="26" fill="#000" opacity=".45"/>
+        <path d="M452 392 L668 392 L684 414 L436 414 Z" fill="#2c3439" stroke="#4f5d64" stroke-width="1.6"/>
+        <path d="M478 414 L642 414 L620 470 L500 470 Z" fill="#1d2429" stroke="#3c4a50" stroke-width="1.2"/>
+        <path d="M500 470 L620 470 L636 498 L484 498 Z" fill="#151b1f" stroke="#313d43" stroke-width="1"/>
+        <path d="M452 392 L668 392" stroke="#8fa3aa" stroke-width="1" opacity=".5"/>
+        <text x="560" y="536" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#5f7278" letter-spacing="2">ANVIL</text>
+      </g>
+
+      <!-- altar + bell -->
+      <g id="altar">
+        <ellipse cx="872" cy="500" rx="120" ry="22" fill="#000" opacity=".4"/>
+        <path d="M800 400 L944 400 L956 424 L788 424 Z" fill="#2a2622" stroke="#544a40" stroke-width="1.6"/>
+        <path d="M816 424 L928 424 L918 496 L826 496 Z" fill="#1a1714" stroke="#3f3830" stroke-width="1.2"/>
+        <g id="bell" style="transform-origin:872px 300px">
+          <path d="M872 300 L872 330" stroke="#6b6157" stroke-width="2"/>
+          <path d="M854 356 q18 -28 36 0 q2 14 6 20 L848 376 q4 -6 6 -20 Z" fill="#b89a52" stroke="#8a6f35" stroke-width="1.2"/>
+          <circle cx="872" cy="380" r="4" fill="#8a6f35"/>
+        </g>
+        <text x="872" y="534" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#5f7278" letter-spacing="2">ALTAR</text>
+      </g>
+
+      <!-- relic machine -->
+      <g id="relicMachine">
+        <ellipse cx="1082" cy="500" rx="96" ry="18" fill="#000" opacity=".4"/>
+        <rect x="1016" y="368" width="132" height="128" rx="10" fill="#1b1626" stroke="#453a5c" stroke-width="1.6"/>
+        <rect x="1030" y="382" width="104" height="52" rx="6" fill="#0d0a14" stroke="#3b3350"/>
+        <circle cx="1054" cy="408" r="9" fill="#65f5df" opacity=".28"/>
+        <circle cx="1106" cy="408" r="9" fill="#b79bff" opacity=".28"/>
+        <path d="M1042 452 h80" stroke="#4a3f66" stroke-width="2"/>
+        <path d="M1050 462 h64" stroke="#3b3350" stroke-width="2"/>
+        <circle cx="1056" cy="480" r="5" fill="#b79bff" opacity=".5"/>
+        <circle cx="1076" cy="480" r="5" fill="#b79bff" opacity=".25"/>
+        <text x="1082" y="536" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#5f7278" letter-spacing="2">RELIC</text>
+      </g>
+
+      <!-- ghost merchant -->
+      <g id="merchant" opacity="0">
+        <ellipse cx="330" cy="504" rx="60" ry="14" fill="#000" opacity=".35"/>
+        <path d="M296 500 q0 -96 34 -96 q34 0 34 96 q-18 12 -34 12 q-16 0 -34 -12 Z" fill="#dff6f4" opacity=".18"/>
+        <path d="M302 500 q0 -88 28 -88 q28 0 28 88" fill="none" stroke="#9ff7e8" stroke-width="1.4" opacity=".55"/>
+        <circle cx="330" cy="378" r="17" fill="#dff6f4" opacity=".2"/>
+        <circle cx="324" cy="376" r="2.6" fill="#9ff7e8"/>
+        <circle cx="337" cy="376" r="2.6" fill="#9ff7e8"/>
+        <path d="M322 388 q8 6 16 0" stroke="#9ff7e8" stroke-width="1.4" fill="none" opacity=".8"/>
+        <text x="330" y="536" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#7fd8c9" letter-spacing="2">MERCHANT</text>
+      </g>
+
+      <!-- 刀架：3 个刀位，放上去的刀保留价值/等级 -->
+      <g id="swordRack">
+        <ellipse cx="358" cy="492" rx="86" ry="12" fill="#000" opacity=".35"/>
+        <rect x="288" y="296" width="11" height="196" rx="5" fill="#2b221b" stroke="#4f3d2f" stroke-width="1.2"/>
+        <rect x="417" y="296" width="11" height="196" rx="5" fill="#2b221b" stroke="#4f3d2f" stroke-width="1.2"/>
+        <g stroke="#5a452f" stroke-width="7" stroke-linecap="round">
+          <path d="M294 330 L422 330"/><path d="M294 386 L422 386"/><path d="M294 442 L422 442"/>
+        </g>
+        <g stroke="#8a6a3c" stroke-width="1" opacity=".45">
+          <path d="M294 327 L422 327"/><path d="M294 383 L422 383"/><path d="M294 439 L422 439"/>
+        </g>
+        <text x="358" y="534" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#5f7278" letter-spacing="2">SWORD RACK</text>
+        <g id="rackBlades"></g>
+        <g id="rackHits"></g>
+      </g>
+
+      <g id="embers" fill="#ffb15c" opacity=".75"></g>
+
+      <!-- the sword (moves between stations) -->
+      <g id="theSword" opacity="0"></g>
+
+      <!-- hammer (wrap carries position, inner carries the swing) -->
+      <!-- 锤子：柄水平向右，本地原点 (0,0) 就是柄的最右端 = 旋转圆心 -->
+      <g id="hammerWrap" opacity="0" style="transform:translate(660px,375px)">
+        <g id="hammerSwing">
+          <g id="hammer">
+            <rect x="-98" y="-7" width="100" height="14" rx="7" fill="#4a2f1e" stroke="#7a4f2c" stroke-width="1.2"/>
+            <g stroke="#2b1a10" stroke-width="1" opacity=".45">
+              <path d="M-18 -6 v12 M-32 -6 v12 M-46 -6 v12 M-60 -6 v12 M-74 -6 v12 M-86 -6 v12"/>
+            </g>
+            <path d="M-98 -20 L-128 -20 L-138 0 L-128 20 L-98 20 Z" fill="#5a656c" stroke="#8ea1a8" stroke-width="1.6"/>
+            <path d="M-98 -12 L-132 -12" stroke="#39444a" stroke-width="3.4" opacity=".85"/>
+            <path d="M-98 -20 L-128 -20" stroke="#cfdada" stroke-width="1" opacity=".45"/>
+            <circle cx="0" cy="0" r="9" fill="#2c1c12" stroke="#8a6338" stroke-width="1.4"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- 火花层放在最后，保证 360° 飞散的火星不会被砧台/剑挡住 -->
+      <g id="fSparks" fill="#ffd166" opacity="0"></g>
+      <rect id="flash" width="1200" height="620" fill="#fff" opacity="0" pointer-events="none"/>
+    </svg>
+    <div id="floats" style="position:absolute;inset:0;pointer-events:none"></div>
+  </div>
+
+  <div class="rack" id="rack"></div>
+
+  <div class="bottom">
+    <div class="panel statuscard">
+      <div class="row value"><span>宝剑价值</span><b id="sValue">—</b></div>
+      <div class="row"><span>品级 / 等级</span><b id="sLevel">—</b></div>
+      <div class="row"><span>破坏率</span><b id="sRisk">—</b></div>
+      <div class="meter"><i id="sRiskBar" class="risk" style="width:0%"></i></div>
+      <div class="row" style="margin-top:2px"><span>入神充能</span><b id="sInsp">—</b></div>
+      <div class="meter"><i id="sInspBar" class="insp" style="width:0%"></i></div>
+      <div class="deckcount" id="deckCounts">签筒 —</div>
+      <div class="school-line" id="schoolLine"></div>
+    </div>
+    <div class="panel controls">
+      <div id="invBar" class="inv-bar hidden"></div>
+      <div class="action-row" id="actions"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- modals -->
+<div class="modal hidden" id="mHelp">
+  <div class="card">
+    <div class="modal-head">
+      <div class="eyebrow">MECHANICS // 原作对照</div>
+      <button class="close-x" id="helpX" type="button" aria-label="关闭">×</button>
+    </div>
+    <h2>锻刀纳贡 · 机制说明</h2>
+    <p>把 <b>ForgeTax</b> 的锻造循环和 AP Chemistry 题库缝在一起：熔炉加热 → 敲击＝做题 → 入神 → 上贡 / 换遗物，30 天为限。<br>
+    答对/答错只决定<b>进哪个池子</b>，具体结果仍在池内抽签：正确池＝成功/大成功/维持，错误池＝损伤/破坏。<br>
+    当前内容：<b>9 个化学单元 44 道题</b>、<b>23 件遗物（6 大流派）</b>、<b>19 种商人货品</b>、<b>36 种刀形</b>。</p>
+    <table class="map-table">
+      <thead><tr><th>原作机制</th><th>2D 表现</th><th>数值</th></tr></thead>
+      <tbody>
+        <tr><td>第一人称打铁</td><td>侧视洞窟剖面：炉 / 砧 / 贡台 / 遗物机同屏，剑在工位之间移动</td><td>—</td></tr>
+        <tr><td>熔炉加热</td><td>炉温条从 0 涨到 100%，绿色窗口取出才可锻；超时烧毁</td><td>窗口 45–86%，全程约 2.2s</td></tr>
+        <tr><td>锻打 = 做题</td><td>点「敲击」弹出全屏题目；答完先看对错与解析，按「落锤」才砸下去结算</td><td>每块剑胚先选单元（U1–U9）</td></tr>
+        <tr><td>正确池</td><td>答对后从正确池抽：成功 / 大成功 / 维持，角落实时显示剩余张数</td><td>13 / 4 / 15 张；连对 3 次必为大成功</td></tr>
+        <tr><td>错误池</td><td>答错后从错误池抽：损伤 / 破坏</td><td>22 / 10 张；连错 3 次直接断刀</td></tr>
+        <tr><td>维持</td><td>答题时点「维持 · 跳过」：评级不变，仍然给解析</td><td>平时每 10 锤 1 次；入神中不限次数</td></tr>
+        <tr><td>刀形</td><td>9 单元 × 4 形 = <b>36 种</b>，7 类轮廓（直刃/弯刀/宽锋/弧刃/锯齿/波浪/尖锋）；<b>发胚时纯随机掷定</b>，第一次入神时显形</td><td>只与所选单元相关（各 1/4）</td></tr>
+        <tr><td>结果效果</td><td>成功/大成功让剑变长变亮；损伤掉价值；破坏＝剑断</td><td>×1.5（+1 级）/ ×3.5（+2 级）/ ×0.75（−1 级）/ 剑毁</td></tr>
+        <tr><td>入神</td><td>同一把剑满 10 锤 → 进入 <b>30 秒连续作答</b>：答错只损伤、不断刀；答完自动下一题；<b>入神中的作答不计入下一次充能</b>（星屑降到 7）</td><td>充能 10，持续 5</td></tr>
+        <tr><td>每日贡品</td><td>顶部「今日贡品」线，达标上贡过关</td><td>100·e^(0.4·天)，第 10 天约 5.5 千、第 20 天约 30 万</td></tr>
+        <tr><td>奶龙 / 验收</td><td>奶龙平时不出现。摇铃上贡时升起<b>铁栅栏牢笼窗</b>：通过就收走宝剑；失败时瞳孔转红、笼窗震动，剑当场<b>崩成碎片四散</b>（第 2 次起碎得更久更远）</td><td>耐心 3 格，上贡失败或空手收工各扣 1</td></tr>
+        <tr><td>遗物机器</td><td>把成品剑拖入右侧机器，随机得 1 件遗物</td><td>消耗整把剑；160G 可换一批</td></tr>
+        <tr><td>幽灵商人</td><td>每 3 天从炉边升起（虚影淡入 + 上浮 + 去模糊），离开时反向消散；金币买素材/道具</td><td>每次上架 <b>4 件</b>；价格 ×e^(0.1·天) × 每刷新翻倍</td></tr>
+        <tr><td>每天 3 把剑胚</td><td>底部剑架卡片；未用的空白剑胚自动留到次日</td><td>基础 3 + 昨日剩余（余 1 → 次日 4）</td></tr>
+        <tr><td>武器架</td><td>砧左侧的木架，3 个刀位；「放回剑架」把已锻的刀存进去，点一下就取回</td><td>保留价值 / 等级 / 签筒，跨天不丢</td></tr>
+        <tr><td>遗物 / 货架刷新</td><td>祭炉弹窗「换一批」、商人「重掷货架」</td><td>160G / 120G（随天数放大）</td></tr>
+        <tr><td>遗物台</td><td>点右上角 ✦ 或点场景里的遗物机：查看 4 个遗物位，可「撤下」销毁腾位</td><td>上限 4 件</td></tr>
+        <tr><td>遗物价码</td><td>祭炉卡右上角的 <b>×N 把</b> 是价码：要投入 N 把剑。<b>优先吃空白剑胚</b>，其次刀架成品，最后才动砧上这把</td><td>强力遗物 ×3 把，普通 ×1 把</td></tr>
+        <tr><td>遗物流派</td><td>遗物分 6 大流派（卡面不显示，只影响共鸣）；同流派拿满 2 件触发<b>共鸣</b>，状态卡左下角会亮出流派名</td><td>成功：大成功 +3 张 · 维持：维持 +3% 且充能 +1 · 损坏：损伤只掉 15% · 容错：充能需求 −2 · 暴击：大成功价值 ×1.5 · 经济：金币 +25%</td></tr>
+        <tr><td>备用剑胚</td><td>商人商品，可重复买；每次刷新限购 3 个</td><td>每刷新一次，单价翻倍</td></tr>
+        <tr><td>30 天通关</td><td>第 30 天上贡达标 → 获得自由</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div class="card-actions"><button class="btn primary" id="helpClose">知道了</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="mMerchant">
+  <div class="card narrow">
+    <div class="modal-head">
+      <div class="eyebrow">GHOST MERCHANT // 每 3 天出现</div>
+      <button class="close-x" id="merchantX" type="button" aria-label="关闭">×</button>
+    </div>
+    <h2>幽灵商人</h2>
+    <p>金币 = 上贡那把刀的价值（贡铃再 +35%）。道具分两类：<b>即时生效</b>的（余烬袋 / 二手打刀 / 加急订单 / 备用剑胚）与<b>入袋待用</b>的（其余）——后者买到后会在主界面底部出现「道具袋」，点「使用」才生效。</p>
+    <div class="grid2" id="merchantGrid"></div>
+    <div class="card-actions">
+      <span style="margin-right:auto;font-family:var(--mono);font-size:9px;color:var(--dim)">金币 <b id="mGold" style="color:var(--gold)">0</b></span>
+      <button class="btn ghost" id="merchantReroll">重掷货架 · 15G</button>
+      <button class="btn ghost" id="merchantClose">离开</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="mRelic">
+  <div class="card narrow">
+    <div class="modal-head">
+      <div class="eyebrow">RELIC MACHINE // 用剑换遗物</div>
+      <button class="close-x" id="relicX" type="button" aria-label="关闭">×</button>
+    </div>
+    <h2>献剑换遗物</h2>
+    <p id="relicNote"></p>
+    <div class="grid2" id="relicGrid"></div>
+    <div class="card-actions">
+      <button class="btn ghost" id="relicReroll">换一批 · 20G</button>
+      <button class="btn ghost" id="relicCancel">算了，留着剑</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="mVault">
+  <div class="card narrow">
+    <div class="modal-head">
+      <div class="eyebrow">RELIC VAULT // 4 SLOTS</div>
+      <button class="close-x" id="vaultX" type="button" aria-label="关闭">×</button>
+    </div>
+    <h2>遗物台</h2>
+    <p>这里的遗物来自祭炉。最多 <b>4 件</b>；撤下的遗物会被<b>彻底销毁</b>，空出来的位置可以再换新的。</p>
+    <div class="grid2" id="vaultGrid"></div>
+    <div class="card-actions"><button class="btn ghost" id="vaultClose">关闭</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="mUnit">
+  <div class="card">
+    <div class="modal-head">
+      <div class="eyebrow">BILLET // 这块钢对应哪个单元</div>
+      <button class="close-x" id="unitX" type="button" aria-label="关闭">×</button>
+    </div>
+    <h2>选一个化学单元</h2>
+    <p>每块剑胚绑定一个单元。之后锻打（做题）都从该单元的题库出题——选你熟的，或者选你不敢碰的。</p>
+    <div class="grid3" id="unitGrid"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="mQuiz">
+  <div class="card">
+    <div class="q-timer hidden" id="qTimerWrap">
+      <div class="eyebrow" style="color:var(--cyan)">入神 // 30 秒内答错不会断刀</div>
+      <div class="bar"><i id="qTimerBar"></i></div>
+      <b id="qTimerNum">30.0</b>
+    </div>
+    <div class="eyebrow" id="qMeta">U1 · 第 1 锤</div>
+    <div class="q-topic" id="qTopic">TOPIC</div>
+    <div class="q-stem" id="qStem"></div>
+    <div class="q-fig" id="qFig"></div>
+    <div class="q-cn" id="qCn"></div>
+    <div class="q-opts" id="qOpts"></div>
+    <div id="qFb" class="q-fb hidden">
+      <div class="q-fb-head" id="qFbHead"></div>
+      <div class="q-expl" id="qExpl"></div>
+    </div>
+    <div class="card-actions">
+      <span id="qMaintainHint" style="margin-right:auto;font-family:var(--mono);font-size:8px;color:var(--dim)"></span>
+      <button class="btn ghost" id="qMaintain" type="button">维持 · 跳过</button>
+      <button class="btn primary hidden" id="qNext" type="button">继续锻打</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 验收：铁栅栏牢笼 ================= -->
+<div id="gate" class="hidden" role="dialog" aria-modal="true" aria-label="验收">
+  <svg id="gateArt" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="iron" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#23282d"/><stop offset=".3" stop-color="#5b666e"/>
+        <stop offset=".48" stop-color="#8d99a1"/><stop offset=".62" stop-color="#4c565d"/>
+        <stop offset="1" stop-color="#1b2025"/>
+      </linearGradient>
+      <radialGradient id="eyeY" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#ffe066"/><stop offset=".72" stop-color="#f2d24e"/><stop offset="1" stop-color="#c9a72f"/>
+      </radialGradient>
+      <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#ffd75e" stop-opacity=".55"/><stop offset="1" stop-color="#ffd75e" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1200" height="620" fill="#05060a"/>
+    <ellipse cx="600" cy="320" rx="380" ry="320" fill="url(#eyeGlow)" opacity=".35" id="gateHalo"/>
+    <rect x="292" y="104" width="616" height="424" rx="14" fill="#0a0c10"/>
+    <g id="gEye" style="transform-box:fill-box;transform-origin:center">
+      <circle cx="600" cy="316" r="196" fill="url(#eyeY)"/>
+      <circle cx="600" cy="316" r="122" fill="#8fbf7a"/>
+      <circle cx="600" cy="316" r="76" fill="#0b0b0b" id="gPupil"/>
+      <circle cx="572" cy="286" r="15" fill="#fff" opacity=".85"/>
+    </g>
+    <path d="M262 78 h676 v476 h-676 z" fill="none" stroke="#242a2f" stroke-width="30"/>
+    <path d="M262 78 h676 v476 h-676 z" fill="none" stroke="#3c444a" stroke-width="20"/>
+    <g id="gBarsL">
+      <g fill="url(#iron)">
+        <rect x="318" y="104" width="14" height="424" rx="4"/>
+        <rect x="378" y="104" width="14" height="424" rx="4"/>
+        <rect x="438" y="104" width="14" height="424" rx="4"/>
+        <rect x="498" y="104" width="14" height="424" rx="4"/>
+        <rect x="558" y="104" width="14" height="424" rx="4"/>
+      </g>
+    </g>
+    <g id="gBarsR">
+      <g fill="url(#iron)">
+        <rect x="618" y="104" width="14" height="424" rx="4"/>
+        <rect x="678" y="104" width="14" height="424" rx="4"/>
+        <rect x="738" y="104" width="14" height="424" rx="4"/>
+        <rect x="798" y="104" width="14" height="424" rx="4"/>
+        <rect x="858" y="104" width="14" height="424" rx="4"/>
+      </g>
+    </g>
+    <g id="gBarsH" fill="url(#iron)">
+      <rect x="292" y="248" width="616" height="16" rx="5"/>
+      <rect x="292" y="392" width="616" height="16" rx="5"/>
+    </g>
+    </g>
+    <g id="gSword">
+      <path d="M600 458 L612 496 L600 552 L588 496 Z" fill="#cfdada" stroke="#8fd8ff" stroke-width="2.4"/>
+      <rect x="582" y="550" width="36" height="9" rx="3" fill="#8a6338"/>
+      <circle cx="600" cy="566" r="7" fill="#8a6338"/>
+    </g>
+    <g id="gShards" fill="#cfdada" stroke="#8fd8ff" stroke-width="1.2" transform="translate(600 505) scale(1.45) translate(-600 -505)">
+      <polygon points="600,458 607,478 593,478" style="--dx:-58px;--dy:36px;--rot:-120deg"/>
+      <polygon points="600,478 609,497 591,497" style="--dx:-30px;--dy:64px;--rot:150deg"/>
+      <polygon points="588,497 596,517 580,512" style="--dx:-86px;--dy:52px;--rot:-90deg"/>
+      <polygon points="612,497 604,517 620,512" style="--dx:-16px;--dy:88px;--rot:110deg"/>
+      <polygon points="596,517 601,545 585,531" style="--dx:-64px;--dy:96px;--rot:-160deg"/>
+      <polygon points="604,517 599,545 615,531" style="--dx:-4px;--dy:74px;--rot:140deg"/>
+      <polygon points="582,550 598,550 598,559 584,559" style="--dx:-96px;--dy:44px;--rot:-200deg"/>
+      <polygon points="602,550 618,550 616,559 602,559" style="--dx:-8px;--dy:26px;--rot:190deg"/>
+      <polygon points="593,560 607,560 607,573 593,573" style="--dx:-42px;--dy:110px;--rot:220deg"/>
+      <polygon points="591,486 597,486 594,496" style="--dx:30px;--dy:58px;--rot:-260deg"/>
+      <polygon points="606,508 613,508 610,520" style="--dx:62px;--dy:38px;--rot:240deg"/>
+      <polygon points="586,536 592,536 589,546" style="--dx:-52px;--dy:84px;--rot:-240deg"/>
+    </g>
+  </svg>
+</div>
+
+<div class="modal hidden" id="mResult">
+  <div class="card narrow">
+    <div class="modal-head">
+      <div class="eyebrow" id="rEyebrow">—</div>
+      <button class="close-x" id="rClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <h2 id="rTitle">—</h2>
+    <p id="rText">—</p>
+    <div class="card-actions"><button class="btn primary" id="rBtn">继续</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script id="chemData" type="application/json">
+[
+  {
+    "id": "U1",
+    "unit": 1,
+    "name": "谱线白钢",
+    "en": "SPECTRAL STEEL",
+    "topics": [
+      "Atomic structure",
+      "Periodicity",
+      "PES"
+    ],
+    "accent": "#63f4ff",
+    "accent2": "#8d7bff",
+    "min": 90,
+    "time": 150,
+    "diff": 1,
+    "tag": "入门",
+    "questions": [
+      {
+        "id": "U1-1",
+        "topic": "Periodic trends",
+        "diff": 1,
+        "stem": "Which atom has the largest atomic radius?",
+        "cn": "哪个原子的原子半径最大？",
+        "options": [
+          "F",
+          "Cl",
+          "Br",
+          "I"
+        ],
+        "answer": 3,
+        "explain": "同族元素从上到下电子层数增加，原子半径增大，因此 I 的半径最大。",
+        "hint": "同族元素：从上到下半径增大。"
+      },
+      {
+        "id": "U1-2",
+        "topic": "Electron configuration",
+        "diff": 1,
+        "stem": "A neutral atom has the electron configuration 1s² 2s² 2p⁶ 3s² 3p⁴. Which element is it?",
+        "cn": "某中性原子的电子排布为 1s² 2s² 2p⁶ 3s² 3p⁴，这是哪种元素？",
+        "options": [
+          "O",
+          "S",
+          "Se",
+          "Si"
+        ],
+        "answer": 1,
+        "explain": "数电子：2+2+6+2+4 = 16，原子序数 16 的元素是硫（S）。",
+        "hint": "把各能级的电子数加起来。"
+      },
+      {
+        "id": "U1-3",
+        "topic": "Ions and electrons",
+        "diff": 1,
+        "stem": "Which pair of particles has the same number of electrons?",
+        "cn": "哪一对粒子的电子数相同？",
+        "options": [
+          "Na⁺ and Ne",
+          "Na⁺ and Ar",
+          "Cl⁻ and Ne",
+          "Mg²⁺ and Ar"
+        ],
+        "answer": 0,
+        "explain": "Na⁺ 失去 1 个电子，有 10 个电子；Ne 也有 10 个电子。Cl⁻ 有 18 个，Ar 有 18 个，但选项里没有把它们配成一对。",
+        "hint": "先算每种离子的电子数：原子序数减电荷。"
+      },
+      {
+        "id": "U1-4",
+        "topic": "Photoelectron spectroscopy",
+        "diff": 2,
+        "stem": "In photoelectron spectroscopy, a peak at higher binding energy corresponds to electrons that are…",
+        "cn": "在光电子能谱中，结合能更高的峰对应怎样的电子？",
+        "options": [
+          "closer to the nucleus",
+          "farther from the nucleus",
+          "in the valence shell",
+          "lower in ionization energy"
+        ],
+        "answer": 0,
+        "explain": "结合能越高，说明电子被原子核束缚得越紧、离核越近；价电子通常结合能较低。",
+        "hint": "结合能高 = 更难被拉走 = 更靠近核。"
+      }
+    ]
+  },
+  {
+    "id": "U2",
+    "unit": 2,
+    "name": "晶格铬钢",
+    "en": "LATTICE CHROME",
+    "topics": [
+      "Lewis structures",
+      "VSEPR",
+      "Hybridization",
+      "Lattice energy"
+    ],
+    "accent": "#b6ff5c",
+    "accent2": "#4cd7ff",
+    "min": 95,
+    "time": 150,
+    "diff": 2,
+    "tag": "标准",
+    "questions": [
+      {
+        "id": "U2-1",
+        "topic": "VSEPR geometry",
+        "diff": 2,
+        "stem": "What is the molecular geometry of SF₄?",
+        "cn": "SF₄ 的分子几何构型是什么？",
+        "options": [
+          "tetrahedral",
+          "seesaw",
+          "square planar",
+          "trigonal bipyramidal"
+        ],
+        "answer": 1,
+        "explain": "S 上有 4 个成键电子对和 1 个孤对电子，属于 AX₄E₁，采取跷跷板（seesaw）构型。",
+        "hint": "5 个电子域，其中 1 个是孤对电子。"
+      },
+      {
+        "id": "U2-2",
+        "topic": "Polarity",
+        "diff": 1,
+        "stem": "Which molecule is nonpolar?",
+        "cn": "哪个分子是非极性的？",
+        "options": [
+          "H₂O",
+          "NH₃",
+          "CO₂",
+          "SO₂"
+        ],
+        "answer": 2,
+        "explain": "CO₂ 是直线型，两个 C=O 键的偶极方向相反、相互抵消，整体非极性。",
+        "hint": "看键的偶极能否对称抵消。"
+      },
+      {
+        "id": "U2-3",
+        "topic": "Hybridization",
+        "diff": 2,
+        "stem": "The hybridization of the central atom in BF₃ is…",
+        "cn": "BF₃ 中心原子的杂化方式是？",
+        "options": [
+          "sp",
+          "sp²",
+          "sp³",
+          "sp³d"
+        ],
+        "answer": 1,
+        "explain": "BF₃ 是平面三角形，中心 B 有 3 个电子域，因此是 sp² 杂化。",
+        "hint": "平面三角形 → 3 个电子域。"
+      },
+      {
+        "id": "U2-4",
+        "topic": "Lattice energy",
+        "diff": 2,
+        "stem": "Which compound has the highest lattice energy?",
+        "cn": "哪种化合物的晶格能最高？",
+        "options": [
+          "NaCl",
+          "KCl",
+          "MgO",
+          "CaO"
+        ],
+        "answer": 2,
+        "explain": "晶格能随离子电荷增大、离子半径减小而增大。MgO 含 2+ 和 2− 离子，且离子半径较小，晶格能最高。",
+        "hint": "电荷越高、离子越小，晶格能越大。"
+      }
+    ]
+  },
+  {
+    "id": "U3",
+    "unit": 3,
+    "name": "氢键霜钢",
+    "en": "HYDROGEN FROST",
+    "topics": [
+      "IMFs",
+      "Properties",
+      "Gases",
+      "Solutions",
+      "Spectroscopy"
+    ],
+    "accent": "#5fffe0",
+    "accent2": "#ff4fd8",
+    "min": 110,
+    "time": 165,
+    "diff": 2,
+    "tag": "首发",
+    "questions": [
+      {
+        "id": "U3-1",
+        "topic": "Intermolecular forces",
+        "diff": 1,
+        "stem": "Which substance has the highest normal boiling point?",
+        "cn": "哪种物质的正常沸点最高？",
+        "options": [
+          "CH₄",
+          "H₂S",
+          "NH₃",
+          "H₂O"
+        ],
+        "answer": 3,
+        "explain": "H₂O 能形成较强的氢键网络，因此沸点最高；NH₃ 也能形成氢键，但每个分子的氢键数目较少，沸点低于水。",
+        "hint": "找能形成最强氢键网络的物质。"
+      },
+      {
+        "id": "U3-2",
+        "topic": "Surface tension",
+        "diff": 1,
+        "stem": "Which intermolecular force is primarily responsible for the high surface tension of water?",
+        "cn": "水的高表面张力主要由哪种分子间作用力造成？",
+        "options": [
+          "London dispersion",
+          "dipole-dipole",
+          "hydrogen bonding",
+          "ion-dipole"
+        ],
+        "answer": 2,
+        "explain": "水分子间形成大量氢键，使表面分子被强烈拉向内部，表面张力很高。",
+        "hint": "水分子之间的“最强”相互作用是什么？"
+      },
+      {
+        "id": "U3-3",
+        "topic": "Gas laws",
+        "diff": 1,
+        "stem": "A gas has a volume of 2.0 L at 1.0 atm. At constant temperature, what volume will it occupy at 2.0 atm?",
+        "cn": "某气体在 1.0 atm 下体积为 2.0 L。恒温下，2.0 atm 时体积是多少？",
+        "options": [
+          "0.50 L",
+          "1.0 L",
+          "2.0 L",
+          "4.0 L"
+        ],
+        "answer": 1,
+        "explain": "玻意耳定律：P₁V₁ = P₂V₂。1.0 × 2.0 = 2.0 × V₂，所以 V₂ = 1.0 L。",
+        "hint": "恒温下，压强翻倍，体积减半。"
+      },
+      {
+        "id": "U3-4",
+        "topic": "Colligative properties",
+        "diff": 2,
+        "stem": "Which 0.10 M aqueous solution has the highest boiling point?",
+        "cn": "哪种 0.10 M 水溶液的沸点最高？",
+        "options": [
+          "NaCl",
+          "glucose",
+          "CaCl₂",
+          "ethanol"
+        ],
+        "answer": 2,
+        "explain": "沸点升高取决于溶质粒子数。CaCl₂ 完全解离成 3 个离子，粒子数最多，沸点最高。",
+        "hint": "数一数每种溶质完全解离后的粒子数。"
+      },
+      {
+        "id": "U3-5",
+        "topic": "Beer-Lambert law",
+        "diff": 2,
+        "stem": "According to the Beer-Lambert law, absorbance is directly proportional to…",
+        "cn": "根据比尔-朗伯定律，吸光度与什么成正比？",
+        "options": [
+          "path length and concentration",
+          "wavelength only",
+          "temperature",
+          "pressure"
+        ],
+        "answer": 0,
+        "explain": "A = εbc，吸光度与摩尔吸光系数、光程长度 b 和浓度 c 成正比。",
+        "hint": "回忆公式 A = εbc。"
+      },
+      {
+        "id": "U3-6",
+        "topic": "Solubility",
+        "diff": 1,
+        "stem": "Which pair of substances is most likely to be miscible?",
+        "cn": "哪一对物质最可能互溶？",
+        "options": [
+          "water and hexane",
+          "water and ethanol",
+          "hexane and methanol",
+          "oil and water"
+        ],
+        "answer": 1,
+        "explain": "乙醇既有极性 OH 基团，又有非极性碳链，能与水形成氢键，因此与水互溶。",
+        "hint": "“相似相溶”，再看能否形成氢键。"
+      }
+    ]
+  },
+  {
+    "id": "U4",
+    "unit": 4,
+    "name": "反应赤钢",
+    "en": "REACTION IRON",
+    "topics": [
+      "Balancing",
+      "Stoichiometry",
+      "Precipitation",
+      "Redox"
+    ],
+    "accent": "#ff9f43",
+    "accent2": "#ff4d6d",
+    "min": 100,
+    "time": 150,
+    "diff": 2,
+    "tag": "标准",
+    "questions": [
+      {
+        "id": "U4-1",
+        "topic": "Combustion stoichiometry",
+        "diff": 2,
+        "stem": "How many moles of O₂ are required to completely combust 2 mol of C₃H₈?",
+        "cn": "完全燃烧 2 mol C₃H₈ 需要多少摩尔 O₂？",
+        "options": [
+          "5 mol",
+          "7 mol",
+          "10 mol",
+          "14 mol"
+        ],
+        "answer": 2,
+        "explain": "C₃H₈ + 5O₂ → 3CO₂ + 4H₂O。1 mol 丙烷需要 5 mol O₂，所以 2 mol 需要 10 mol。",
+        "hint": "先配平丙烷燃烧方程式。"
+      },
+      {
+        "id": "U4-2",
+        "topic": "Limiting reactant",
+        "diff": 2,
+        "stem": "For 2H₂ + O₂ → 2H₂O, which reactant is limiting when 2 mol H₂ reacts with 2 mol O₂?",
+        "cn": "反应 2H₂ + O₂ → 2H₂O 中，2 mol H₂ 与 2 mol O₂ 反应，哪种是限量反应物？",
+        "options": [
+          "H₂",
+          "O₂",
+          "H₂O",
+          "neither"
+        ],
+        "answer": 0,
+        "explain": "2 mol H₂ 只需要 1 mol O₂；O₂ 有 2 mol，过量，所以 H₂ 是限量反应物。",
+        "hint": "用化学计量比算一算“够不够”。"
+      },
+      {
+        "id": "U4-3",
+        "topic": "Precipitation",
+        "diff": 1,
+        "stem": "Which pair of solutions produces a precipitate?",
+        "cn": "哪一组溶液混合会产生沉淀？",
+        "options": [
+          "NaCl and KNO₃",
+          "AgNO₃ and KCl",
+          "HCl and NaOH",
+          "Na₂SO₄ and KCl"
+        ],
+        "answer": 1,
+        "explain": "Ag⁺ 与 Cl⁻ 结合生成难溶的 AgCl 沉淀；其他组合的离子都保持可溶。",
+        "hint": "找一对能生成难溶盐的离子。"
+      },
+      {
+        "id": "U4-4",
+        "topic": "Redox",
+        "diff": 1,
+        "stem": "In the reaction Zn + Cu²⁺ → Zn²⁺ + Cu, which species is oxidized?",
+        "cn": "反应 Zn + Cu²⁺ → Zn²⁺ + Cu 中，哪种物质被氧化？",
+        "options": [
+          "Zn",
+          "Cu²⁺",
+          "Zn²⁺",
+          "Cu"
+        ],
+        "answer": 0,
+        "explain": "Zn 失去电子变成 Zn²⁺，氧化数从 0 升到 +2，因此 Zn 被氧化。",
+        "hint": "氧化 = 失去电子 = 氧化数升高。"
+      },
+      {
+        "id": "U4-5",
+        "topic": "Net ionic equations",
+        "diff": 2,
+        "stem": "What is the net ionic equation for HCl(aq) + NaOH(aq) → NaCl(aq) + H₂O(l)?",
+        "cn": "HCl(aq) + NaOH(aq) → NaCl(aq) + H₂O(l) 的净离子方程式是什么？",
+        "options": [
+          "H⁺ + OH⁻ → H₂O",
+          "Na⁺ + Cl⁻ → NaCl",
+          "HCl + NaOH → NaCl + H₂O",
+          "H⁺ + Cl⁻ → HCl"
+        ],
+        "answer": 0,
+        "explain": "Na⁺ 和 Cl⁻ 是旁观离子，净反应只有 H⁺ 与 OH⁻ 结合生成水。",
+        "hint": "把可溶强电解质的旁观离子删掉。"
+      }
+    ]
+  },
+  {
+    "id": "U5",
+    "unit": 5,
+    "name": "催化焰钢",
+    "en": "CATALYTIC FLAME",
+    "topics": [
+      "Rate laws",
+      "Activation energy",
+      "Catalysts",
+      "Half-life"
+    ],
+    "accent": "#ffe56b",
+    "accent2": "#ff7a45",
+    "min": 105,
+    "time": 150,
+    "diff": 3,
+    "tag": "进阶",
+    "questions": [
+      {
+        "id": "U5-1",
+        "topic": "Catalysts",
+        "diff": 1,
+        "stem": "A catalyst increases the rate of a reaction by…",
+        "cn": "催化剂加快反应速率的原理是？",
+        "options": [
+          "increasing ΔH",
+          "lowering activation energy",
+          "increasing the equilibrium constant",
+          "shifting equilibrium toward products"
+        ],
+        "answer": 1,
+        "explain": "催化剂提供一条活化能更低的新路径，从而加快正逆反应速率；它不改变 ΔH 或平衡常数。",
+        "hint": "催化剂改变的是“到达山顶的高度”。"
+      },
+      {
+        "id": "U5-2",
+        "topic": "Rate law",
+        "diff": 2,
+        "stem": "For a reaction with rate = k[A]²[B], doubling [A] while holding [B] constant changes the rate by a factor of…",
+        "cn": "某反应速率方程为 rate = k[A]²[B]。保持 [B] 不变，将 [A] 加倍，速率变为原来的多少倍？",
+        "options": [
+          "2",
+          "4",
+          "8",
+          "1"
+        ],
+        "answer": 1,
+        "explain": "速率与 [A]² 成正比，[A] 变为 2 倍，速率变为 2² = 4 倍。",
+        "hint": "把 2 代入 [A]²。"
+      },
+      {
+        "id": "U5-3",
+        "topic": "Collision theory",
+        "diff": 1,
+        "stem": "Which change will increase the rate of a reaction between a solid and an aqueous solution?",
+        "cn": "哪种改变会加快固体与溶液之间的反应速率？",
+        "options": [
+          "decreasing the temperature",
+          "decreasing the solid’s surface area",
+          "increasing the concentration of the aqueous solution",
+          "adding water to the solution"
+        ],
+        "answer": 2,
+        "explain": "提高溶液浓度会增加单位时间内有效碰撞的频率，从而加快反应；降温、减小表面积、稀释都会减慢反应。",
+        "hint": "有效碰撞越多，速率越快。"
+      },
+      {
+        "id": "U5-4",
+        "topic": "Mechanisms",
+        "diff": 1,
+        "stem": "The rate-determining step of a reaction is…",
+        "cn": "反应的决速步是？",
+        "options": [
+          "the fastest step",
+          "the slowest step",
+          "the step with the largest ΔH",
+          "the final step"
+        ],
+        "answer": 1,
+        "explain": "最慢的一步限制了整个反应的速率，因此称为决速步。",
+        "hint": "最慢的一步决定整体速度。"
+      },
+      {
+        "id": "U5-5",
+        "topic": "Half-life",
+        "diff": 2,
+        "stem": "A first-order reaction has a half-life of 10 s. What fraction of the reactant remains after 30 s?",
+        "cn": "某一级反应的半衰期为 10 s。30 s 后反应物还剩多少？",
+        "options": [
+          "1/2",
+          "1/4",
+          "1/8",
+          "1/16"
+        ],
+        "answer": 2,
+        "explain": "30 s 是 3 个半衰期，剩余分数为 (1/2)³ = 1/8。",
+        "hint": "每过一个半衰期，剩下一半。"
+      }
+    ]
+  },
+  {
+    "id": "U6",
+    "unit": 6,
+    "name": "焓熵玄钢",
+    "en": "ENTHALPY DEEP",
+    "topics": [
+      "Enthalpy",
+      "Entropy",
+      "Gibbs free energy",
+      "Hess’s law"
+    ],
+    "accent": "#9bd7ff",
+    "accent2": "#ff5c8a",
+    "min": 110,
+    "time": 155,
+    "diff": 3,
+    "tag": "进阶",
+    "questions": [
+      {
+        "id": "U6-1",
+        "topic": "Entropy",
+        "diff": 1,
+        "stem": "Which process has a positive ΔS?",
+        "cn": "哪个过程的 ΔS 为正？",
+        "options": [
+          "gas → liquid",
+          "liquid → solid",
+          "solid → gas",
+          "gas → solid"
+        ],
+        "answer": 2,
+        "explain": "固体升华为气体时，粒子排列从有序变为高度无序，熵显著增加，ΔS > 0。",
+        "hint": "熵增加 = 粒子更自由、更无序。"
+      },
+      {
+        "id": "U6-2",
+        "topic": "Gibbs free energy",
+        "diff": 2,
+        "stem": "For a reaction with ΔH > 0 and ΔS > 0, the reaction is spontaneous…",
+        "cn": "对于 ΔH > 0 且 ΔS > 0 的反应，它在什么条件下自发？",
+        "options": [
+          "at all temperatures",
+          "only at low temperatures",
+          "only at high temperatures",
+          "never"
+        ],
+        "answer": 2,
+        "explain": "ΔG = ΔH − TΔS。ΔH 和 ΔS 都为正时，只有在 T 足够高、TΔS 超过 ΔH 时，ΔG 才小于 0。",
+        "hint": "看 ΔG = ΔH − TΔS 的符号。"
+      },
+      {
+        "id": "U6-3",
+        "topic": "Enthalpy sign",
+        "diff": 1,
+        "stem": "A reaction releases 50 kJ of heat to the surroundings. What is ΔH for the system?",
+        "cn": "某反应向环境释放 50 kJ 热量。该系统的 ΔH 是多少？",
+        "options": [
+          "+50 kJ",
+          "−50 kJ",
+          "0 kJ",
+          "impossible to determine"
+        ],
+        "answer": 1,
+        "explain": "系统放热，焓降低，因此 ΔH = −50 kJ。",
+        "hint": "放热 = 系统能量减少 = ΔH 为负。"
+      },
+      {
+        "id": "U6-4",
+        "topic": "Hess’s law",
+        "diff": 1,
+        "stem": "Hess’s law allows you to calculate…",
+        "cn": "盖斯定律可以用来计算什么？",
+        "options": [
+          "reaction enthalpy from step enthalpies",
+          "the equilibrium constant",
+          "the reaction rate",
+          "the activation energy"
+        ],
+        "answer": 0,
+        "explain": "盖斯定律指出，反应的總焓变只取决于始态和终态，因此可以把分步反应的 ΔH 相加得到总 ΔH。",
+        "hint": "焓是状态函数，与路径无关。"
+      },
+      {
+        "id": "U6-5",
+        "topic": "State functions",
+        "diff": 1,
+        "stem": "Which of the following is a state function?",
+        "cn": "下列哪个是状态函数？",
+        "options": [
+          "heat",
+          "work",
+          "enthalpy",
+          "path length"
+        ],
+        "answer": 2,
+        "explain": "焓（H）是状态函数，只取决于当前状态；热和功与路径有关。",
+        "hint": "状态函数只看“现在在哪”，不看“怎么来的”。"
+      }
+    ]
+  },
+  {
+    "id": "U7",
+    "unit": 7,
+    "name": "平衡钨钢",
+    "en": "EQUILIBRIUM TUNGSTEN",
+    "topics": [
+      "Kc and Q",
+      "Le Châtelier",
+      "ICE tables",
+      "Ksp"
+    ],
+    "accent": "#b28cff",
+    "accent2": "#5fffe0",
+    "min": 115,
+    "time": 160,
+    "diff": 3,
+    "tag": "进阶",
+    "questions": [
+      {
+        "id": "U7-1",
+        "topic": "Le Châtelier",
+        "diff": 2,
+        "stem": "For an exothermic reaction at equilibrium, increasing the temperature will…",
+        "cn": "某放热反应达到平衡后，升高温度会怎样？",
+        "options": [
+          "shift right and increase K",
+          "shift left and decrease K",
+          "shift right and decrease K",
+          "cause no change"
+        ],
+        "answer": 1,
+        "explain": "放热反应的 ΔH < 0。升温相当于向系统加入热量，平衡向吸热方向（左）移动，K 减小。",
+        "hint": "升温帮助吸热方向。"
+      },
+      {
+        "id": "U7-2",
+        "topic": "Reaction quotient",
+        "diff": 1,
+        "stem": "If Q < K, the reaction will…",
+        "cn": "如果 Q < K，反应会怎样？",
+        "options": [
+          "shift right",
+          "shift left",
+          "already be at equilibrium",
+          "stop completely"
+        ],
+        "answer": 0,
+        "explain": "Q < K 表示产物相对不足，反应向正方向（右）移动以增大 Q，直到 Q = K。",
+        "hint": "Q 太小，需要生成更多产物。"
+      },
+      {
+        "id": "U7-3",
+        "topic": "Pressure effects",
+        "diff": 2,
+        "stem": "For N₂(g) + 3H₂(g) ⇌ 2NH₃(g), increasing the pressure shifts equilibrium…",
+        "cn": "对于 N₂(g) + 3H₂(g) ⇌ 2NH₃(g)，增大压强会使平衡向哪边移动？",
+        "options": [
+          "toward NH₃",
+          "toward N₂ and H₂",
+          "no change",
+          "depends on the catalyst"
+        ],
+        "answer": 0,
+        "explain": "增大压强时，平衡向气体摩尔数较少的一侧移动。左边 4 mol 气体，右边 2 mol，因此向 NH₃ 移动。",
+        "hint": "数一数两边气体的系数之和。"
+      },
+      {
+        "id": "U7-4",
+        "topic": "Catalysts and equilibrium",
+        "diff": 1,
+        "stem": "Adding a catalyst to a system at equilibrium…",
+        "cn": "向平衡体系中加入催化剂会怎样？",
+        "options": [
+          "increases K",
+          "decreases K",
+          "changes the equilibrium position",
+          "does not change the equilibrium position"
+        ],
+        "answer": 3,
+        "explain": "催化剂同等程度地加快正逆反应速率，缩短达到平衡的时间，但不改变平衡位置或 K。",
+        "hint": "催化剂让两边都“加速”，不偏袒任何一边。"
+      },
+      {
+        "id": "U7-5",
+        "topic": "Solubility product",
+        "diff": 3,
+        "stem": "The solubility product Ksp of AgCl is 1.8 × 10⁻¹⁰. What is its molar solubility in pure water?",
+        "cn": "AgCl 的 Ksp = 1.8 × 10⁻¹⁰。它在纯水中的摩尔溶解度是多少？",
+        "options": [
+          "1.3 × 10⁻⁵ M",
+          "1.8 × 10⁻¹⁰ M",
+          "9.0 × 10⁻¹¹ M",
+          "1.3 × 10⁻³ M"
+        ],
+        "answer": 0,
+        "explain": "AgCl(s) ⇌ Ag⁺ + Cl⁻，Ksp = s²。s = √(1.8 × 10⁻¹⁰) ≈ 1.3 × 10⁻⁵ M。",
+        "hint": "1:1 型盐，Ksp = s²。"
+      }
+    ]
+  },
+  {
+    "id": "U8",
+    "unit": 8,
+    "name": "酸碱淬钢",
+    "en": "ACID-BASE QUENCH",
+    "topics": [
+      "pH",
+      "Buffers",
+      "Titration",
+      "Conjugates"
+    ],
+    "accent": "#a8ff60",
+    "accent2": "#ff4fa3",
+    "min": 120,
+    "time": 165,
+    "diff": 3,
+    "tag": "挑战",
+    "questions": [
+      {
+        "id": "U8-1",
+        "topic": "pH of solutions",
+        "diff": 1,
+        "stem": "Which 0.10 M solution has the lowest pH?",
+        "cn": "哪种 0.10 M 溶液的 pH 最低？",
+        "options": [
+          "HCl",
+          "CH₃COOH",
+          "NaCl",
+          "NH₃"
+        ],
+        "answer": 0,
+        "explain": "HCl 是强酸，完全解离，0.10 M 时 [H⁺] ≈ 0.10 M，pH = 1，最低。CH₃COOH 是弱酸，pH 较高。",
+        "hint": "强酸完全解离，酸性最强。"
+      },
+      {
+        "id": "U8-2",
+        "topic": "Buffers",
+        "diff": 2,
+        "stem": "A buffer is most effective when…",
+        "cn": "缓冲溶液在什么条件下最有效？",
+        "options": [
+          "pH = pKa",
+          "pH = 7",
+          "pH = pKb",
+          "the acid concentration is zero"
+        ],
+        "answer": 0,
+        "explain": "缓冲溶液在 pH ≈ pKa（通常 ±1）时缓冲能力最强，此时酸和共轭碱的比例接近 1:1。",
+        "hint": "Henderson–Hasselbalch：pH = pKa + log([A⁻]/[HA])。"
+      },
+      {
+        "id": "U8-3",
+        "topic": "Conjugate pairs",
+        "diff": 1,
+        "stem": "Which is the conjugate base of HCO₃⁻?",
+        "cn": "HCO₃⁻ 的共轭碱是什么？",
+        "options": [
+          "H₂CO₃",
+          "CO₃²⁻",
+          "OH⁻",
+          "CO₂"
+        ],
+        "answer": 1,
+        "explain": "共轭碱是原酸失去一个 H⁺ 后的物种。HCO₃⁻ 失去 H⁺ 得到 CO₃²⁻。",
+        "hint": "共轭碱 = 少一个 H⁺。"
+      },
+      {
+        "id": "U8-4",
+        "topic": "Titration",
+        "diff": 2,
+        "stem": "At the equivalence point of a strong acid–strong base titration, the pH is…",
+        "cn": "强酸-强碱滴定的等当点时，pH 是多少？",
+        "options": [
+          "1",
+          "7",
+          "13",
+          "depends on the indicator"
+        ],
+        "answer": 1,
+        "explain": "强酸与强碱完全中和生成中性盐和水，等当点时 pH = 7（25 °C）。",
+        "hint": "强酸强碱的盐不水解。"
+      },
+      {
+        "id": "U8-5",
+        "topic": "Amphoteric species",
+        "diff": 2,
+        "stem": "Which species can act as both an acid and a base?",
+        "cn": "哪种物种既能作酸又能作碱？",
+        "options": [
+          "H₃O⁺",
+          "HSO₄⁻",
+          "Cl⁻",
+          "Na⁺"
+        ],
+        "answer": 1,
+        "explain": "HSO₄⁻ 可以失去 H⁺ 变成 SO₄²⁻（作酸），也可以接受 H⁺ 变成 H₂SO₄（作碱），是两性物种。",
+        "hint": "找既能给 H⁺、又能接 H⁺ 的离子。"
+      }
+    ]
+  },
+  {
+    "id": "U9",
+    "unit": 9,
+    "name": "电蚀镍钢",
+    "en": "ELECTRO NICKEL",
+    "topics": [
+      "Galvanic cells",
+      "Electrolysis",
+      "Cell potential",
+      "ΔG"
+    ],
+    "accent": "#5c9dff",
+    "accent2": "#ffe45c",
+    "min": 125,
+    "time": 170,
+    "diff": 3,
+    "tag": "挑战",
+    "questions": [
+      {
+        "id": "U9-1",
+        "topic": "Galvanic cells",
+        "diff": 1,
+        "stem": "In a galvanic cell, oxidation occurs at the…",
+        "cn": "在原电池中，氧化反应发生在哪里？",
+        "options": [
+          "cathode",
+          "anode",
+          "salt bridge",
+          "voltmeter"
+        ],
+        "answer": 1,
+        "explain": "原电池中，阳极（anode）发生氧化，阴极（cathode）发生还原。记忆：An Ox（阳极氧化）。",
+        "hint": "An Ox = Anode Oxidation。"
+      },
+      {
+        "id": "U9-2",
+        "topic": "Cell potential and ΔG",
+        "diff": 3,
+        "stem": "A galvanic cell has E°cell = +1.10 V and transfers 2 electrons. What is ΔG°? (F = 96,485 C/mol)",
+        "cn": "某原电池 E°cell = +1.10 V，转移 2 个电子。ΔG° 是多少？（F = 96,485 C/mol）",
+        "options": [
+          "−212 kJ/mol",
+          "+212 kJ/mol",
+          "−106 kJ/mol",
+          "+106 kJ/mol"
+        ],
+        "answer": 0,
+        "explain": "ΔG° = −nFE° = −(2)(96,485)(1.10) ≈ −212,000 J/mol = −212 kJ/mol。",
+        "hint": "用 ΔG° = −nFE°。"
+      },
+      {
+        "id": "U9-3",
+        "topic": "Electrodes",
+        "diff": 1,
+        "stem": "Which process occurs at the cathode?",
+        "cn": "阴极发生什么过程？",
+        "options": [
+          "oxidation",
+          "reduction",
+          "release of electrons into the wire",
+          "formation of anions"
+        ],
+        "answer": 1,
+        "explain": "阴极是还原发生的电极：氧化剂得到电子。原电池中阳离子向阴极移动。",
+        "hint": "阴极 = reduction（还原）。"
+      },
+      {
+        "id": "U9-4",
+        "topic": "Electrolysis",
+        "diff": 2,
+        "stem": "Electrolysis is…",
+        "cn": "电解是什么？",
+        "options": [
+          "a spontaneous conversion of chemical energy to electrical energy",
+          "a non-spontaneous process driven by an external voltage",
+          "a type of galvanic cell",
+          "a purely physical change"
+        ],
+        "answer": 1,
+        "explain": "电解利用外加电压驱动非自发反应，把电能转化为化学能；原电池才是自发过程。",
+        "hint": "电解需要外部电源。"
+      },
+      {
+        "id": "U9-5",
+        "topic": "Concentration cells",
+        "diff": 2,
+        "stem": "In a concentration cell, the cell potential is zero when…",
+        "cn": "在浓差电池中，电池电势什么时候为零？",
+        "options": [
+          "the two concentrations are equal",
+          "one concentration is zero",
+          "the temperature is 0 °C",
+          "the anode is fully consumed"
+        ],
+        "answer": 0,
+        "explain": "浓差电池的电动势来自两侧浓度差。当两侧浓度相等时，没有浓度梯度驱动电子流动，E = 0。",
+        "hint": "没有浓度差，就没有驱动力。"
+      }
+    ]
+  }
+]
+</script>
+
+<script>
+'use strict';
+/* ============================================================
+   RULES —— ForgeTax 的数值骨架（可在帮助面板对照）
+   ============================================================ */
+const RULES = {
+  DAYS: 30,
+  BLADES_PER_DAY: 3,
+  PATIENCE: 3,
+  BASE_VALUE: 100,
+  LEVEL_CAP: 30,
+  M_SUCCESS: 1.5,
+  M_BIG: 3.5,
+  M_DAMAGE: 0.75,
+  DECK: { break: 3, damage: 5, hold: 6, success: 12, big: 4 },
+  DECK_SIZE: 30,
+  INSP_CHARGE: 10,
+  INSP_TURNS: 5,
+  QUOTA_BASE: 220,
+  QUOTA_GROWTH: 1.045,
+  HEAT_MS: 2200,
+  HEAT_WINDOW: [0.45, 0.86],
+  GOLD_BASE: 12,
+  GOLD_OVER: 18,
+  RELIC_SLOTS: 4,        // 遗物位
+};
+
+const SCHOOLS = {
+  success: { name:'成功流', color:'#7dffb2', res:'正确池 大成功 +3 张' },
+  hold:    { name:'维持流', color:'#65f5df', res:'维持时价值 +3%、入神充能 +1' },
+  damage:  { name:'损坏流', color:'#ff9a74', res:'损伤只掉 15% 价值' },
+  guard:   { name:'容错流', color:'#8fd8ff', res:'入神充能需求 −2' },
+  crit:    { name:'暴击流', color:'#ffd166', res:'大成功的价值再 ×1.5' },
+  eco:     { name:'经济流', color:'#ffe09a', res:'上贡金币再 +25%' },
+};
+const RELICS = {
+  /* ---- 成功流 ---- */
+  chalk:   { id:'chalk',   name:'红粉笔',     en:'RED CHALK',      cost:1, school:'success', desc:'正确池 +2 张「成功」。' },
+  powder:  { id:'powder',  name:'火药袋',     en:'POWDER BAG',     cost:1, school:'success', desc:'正确池 +2 张「大成功」。' },
+  whet:    { id:'whet',    name:'磨刀石',     en:'WHETSTONE',      cost:1, school:'success', desc:'每次成功/大成功额外 +10% 价值。' },
+  hammerSong:{ id:'hammerSong', name:'锤歌',  en:'HAMMER SONG',    cost:1, school:'success', desc:'连对 2 次起，每次成功再 +6% 价值。' },
+  /* ---- 维持流 ---- */
+  stardust:{ id:'stardust',name:'冷却的星屑', en:'COOLED STARDUST',cost:1, school:'hold',    desc:'入神充能需求 10 → 7。' },
+  patience:{ id:'patience',name:'老铁匠的耐心',en:'PATIENCE',      cost:1, school:'hold',    desc:'每次「维持」额外 +5% 价值。' },
+  silence: { id:'silence', name:'静海',       en:'DEAD CALM',      cost:1, school:'hold',    desc:'每次「维持」额外 +1 入神充能。' },
+  /* ---- 损坏流 ---- */
+  bloodQuench:{ id:'bloodQuench', name:'血淬', en:'BLOOD QUENCH',  cost:2, school:'damage',  desc:'每次损伤后，下一锤成功额外 ×1.5。' },
+  scar:    { id:'scar',    name:'伤痕纹',     en:'SCAR PATTERN',   cost:2, school:'damage',  desc:'每层损伤让价值收益 +6%（上限 +30%）。' },
+  /* ---- 容错流 ---- */
+  scale:   { id:'scale',   name:'裂开的龙鳞', en:'CRACKED SCALE',  cost:1, school:'guard',   desc:'错误池 −2 张「破坏」。' },
+  spring:  { id:'spring',  name:'悔恨的发条', en:'REGRET SPRING',  cost:2, school:'guard',   desc:'每把剑的第一次「损伤」被撤回。' },
+  oblivion:{ id:'oblivion',name:'遗忘之乡',   en:'OBLIVION',       cost:3, school:'guard',   desc:'「破坏」有 50% 概率变成「损伤」。' },
+  apron:   { id:'apron',   name:'铁匠围裙',   en:'SMITH APRON',    cost:2, school:'guard',   desc:'每把剑的第一次「损伤」不降等级。' },
+  wool:    { id:'wool',    name:'羊毛衬',     en:'WOOL LINING',    cost:3, school:'guard',   desc:'每把剑第一次「断刀」变成「损伤」。' },
+  steady:  { id:'steady',  name:'稳手',       en:'STEADY HAND',    cost:3, school:'guard',   desc:'连错 4 次才断刀（原本 3 次）。' },
+  /* ---- 暴击流 ---- */
+  roc:     { id:'roc',     name:'隼羽',       en:'FALCON FEATHER', cost:1, school:'crit',    desc:'正确池 +2 张「大成功」。' },
+  bellows: { id:'bellows', name:'风箱',       en:'BELLOWS',        cost:2, school:'crit',    desc:'大成功的价值额外 +20%。' },
+  /* ---- 经济流 ---- */
+  purse:   { id:'purse',   name:'钱袋',       en:'COIN PURSE',     cost:1, school:'eco',     desc:'上贡金币 +20%。' },
+  haggle:  { id:'haggle',  name:'讨价',       en:'HAGGLING',       cost:1, school:'eco',     desc:'商人所有商品 85 折。' },
+  /* ---- 锋芒流 ---- */
+  /* ---- 中立 ---- */
+  ticket:  { id:'ticket',  name:'幽灵送货单', en:'GHOST WAYBILL',  cost:1, school:null,      desc:'每天多一块剑胚（3 → 4）。' },
+  tinder:  { id:'tinder',  name:'火绒盒',     en:'TINDERBOX',      cost:1, school:null,      desc:'加热窗口放宽：45% 起 → 30% 起。' },
+  bell:    { id:'bell',    name:'贡铃',       en:'TRIBUTE BELL',   cost:1, school:null,      desc:'上贡获得的金币 +35%。' },
+  ledger:  { id:'ledger',  name:'龙账本',     en:'DRAGON LEDGER',  cost:1, school:null,      desc:'每日贡品线下调 8%。' }
+};
+/* 同流派 2 件 → 触发共鸣 */
+function schoolCount(k){ return S.relics.filter(id => RELICS[id] && RELICS[id].school === k).length; }
+function resonance(k){ return schoolCount(k) >= 2; }
+function activeSchools(){
+  return Object.keys(SCHOOLS).filter(k => resonance(k));
+}const RELIC_IDS = Object.keys(RELICS);
+
+const MERCHANT = {
+  coal:    { id:'coal',    name:'精炼煤', price:220, desc:'让当前这把刀的价值 ×1.6（没上砧则作用于下一把）。' },
+  stone:   { id:'stone',   name:'补炉石', price:180, desc:'抵掉一次烧毁，用掉为止。' },
+  saliva:  { id:'saliva',  name:'龙涎',   price:260, desc:'抽走当前签筒里 2 张「破坏」。' },
+  sand:    { id:'sand',    name:'星砂',   price:320, desc:'立刻把当前剑的入神充能充满。' },
+  mithril: { id:'mithril', name:'秘银锤', price:420, desc:'今日签筒 +3 张「成功」。' },
+  ember:   { id:'ember',   name:'余烬袋', price:160, instant:true, desc:'立刻 +220 金币。' },
+  knife:   { id:'knife',   name:'二手打刀', price:640, instant:true, desc:'立刻得到一把现成的刀（价值 900 · LV8），直接放上铁砧。' },
+  file:    { id:'file',    name:'细锉刀',   price:240, desc:'今日每次成功额外 +8% 价值。' },
+  gloves:  { id:'gloves',  name:'隔热手套', price:200, desc:'今日加热窗口放宽（45% → 30% 起）。' },
+  dust:    { id:'dust',    name:'龙鳞粉',   price:340, desc:'把当前签筒里所有「破坏」换成「维持」。' },
+  order:   { id:'order',   name:'加急订单', price:300, instant:true, desc:'今日贡品线立刻下调 15%。' },
+  billet:  { id:'billet',  name:'备用剑胚', price:260, instant:true, unlimited:true, desc:'立刻多一块未使用的剑胚。可重复购买；当天没用完会带到下一天。' },
+  bandage: { id:'bandage', name:'布条',     price:180, desc:'今日第一次断刀被抵消。' },
+  talisman:{ id:'talisman',name:'护符',     price:360, desc:'今日入神充能需求 −3。' },
+  chisel:  { id:'chisel',  name:'凿子',     price:300, desc:'今日「连对 2 次」就算大成功（原本 3 次）。' },
+  lamp:    { id:'lamp',    name:'长明灯',   price:320, desc:'今日入神时长 30 秒 → 45 秒。' },
+  charcoal:{ id:'charcoal',name:'炭粉',     price:220, desc:'今日正确池 +3 张「大成功」。' },
+  coin:    { id:'coin',    name:'幸运币',   price:160, desc:'今日错误池 +2 张「维持」、+1 张「成功」——答错也可能走运。' },
+  mirror:  { id:'mirror',  name:'照心镜',   price:240, desc:'立刻把当前签筒重洗一遍（换一手牌）。' }
+};
+const MERCHANT_IDS = Object.keys(MERCHANT);
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const S = {
+  day: 1,
+  quota: 0,
+  gold: 0,
+  patience: RULES.PATIENCE,
+  blades: [],            // {uid,state,value,level,dmg,insp,inspLeft,seed}
+  active: null,
+  relics: [],
+  rack: [],              // 刀架：最多 3 把，跨天保留价值/等级
+  inv: [],               // 道具袋：买下但不即时生效的道具，需要手动「使用」
+  curQ: null,            // 当前题目
+  lastAnswer: null,      // 本题对错，等落锤时结算
+  inspTimer: 0,          // 入神倒计时句柄
+  qQueue: {},            // unitId -> 剩余题目
+  pendingBillet: null,   // 正在选单元的剑胚
+  pendingMode: null,     // 'heat' = 选完进熔炉；'ready' = 选完直接上砧
+  scene: 'idle',         // idle | heat | anvil | altar | over
+  heating: false,
+  heatRAF: 0,
+  heatT: 0,
+  offered: false,        // tribute accepted today
+  penalizedToday: false, // patience already lost today
+  merchantStock: [],
+  merchantDay: -99,
+  merchMul: 1,           // 商品价：每次刷新翻倍
+  billetBought: 0,       // 本次刷新剑胚已买数量（上限 3）
+  buffs: { coal:false, stone:false, saliva:false, mithril:0, file:false, gloves:false, bandage:false, talisman:false, chisel:false, lamp:false, charcoal:false, coin:false },
+  log: [],
+  busy: false,
+  resultAction: null,
+  relicOffer: [],   // 祭炉当前报价，关掉再开不刷新
+  fails: 0,              // 上贡累计失败次数（第 2 次起栅栏会合拢）
+  survived: 0,
+  relicsMade: 0,
+  bladesBroken: 0,
+  bestValue: 0
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function fmtV(v){
+  if (v >= 1e6) return (v/1e6).toFixed(v>=1e7?0:1) + 'M';
+  if (v >= 1e4) return (v/1e3).toFixed(v>=1e5?0:1) + 'k';
+  return Math.round(v).toLocaleString('en-US');
+}
+const quotaFor = d => Math.max(10, Math.round(100 * Math.exp(0.4 * d)));    // 100·e^(0.4·天)
+const merchantMul = () => Math.exp(0.1 * S.day);                            // 商品价格 ×e^(0.1·天)
+const tierOf = lv => lv >= 26 ? 4 : lv >= 19 ? 3 : lv >= 12 ? 2 : lv >= 6 ? 1 : 0;
+const TIER_NAME = ['糙品','常品','良品','精品','绝品'];
+const TIER_COLOR = ['#8b9aa0','#cfdada','#8fd8ff','#ffd166','#ff9a4a'];
+
+/* ============================================================
+   BLADE
+   ============================================================ */
+const CHEM = JSON.parse(document.getElementById('chemData').textContent);
+const CHEM_BY_ID = Object.fromEntries(CHEM.map(u => [u.id, u]));
+
+/* ------------------------------------------------------------------ *
+ *  与「练习 → 题库」共享同一数据源
+ *  同源时直接读父窗口题库；本地 file:// 跨源时用 postMessage 索取。
+ * ------------------------------------------------------------------ */
+var __bankImgCache = {};
+function applyPracticeBank(pool){
+  if (!pool || !pool.length) return false;
+  var plain = function (s) {
+    return String(s == null ? '' : s).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  };
+  var byUnit = {};
+  for (var i = 0; i < pool.length; i++) {
+    var item = pool[i];
+    if (!item || typeof item !== 'object') continue;
+    if (item.type === 'frq') continue;                 // 解答题无法自动判分
+    var opts = Array.isArray(item.opts) ? item.opts : [];
+    if (opts.length !== 4 || !Number.isInteger(item.ans)) continue;
+    var unit = String(item.r || '').split('.')[0].toUpperCase();
+    if (!/^U[1-9]$/.test(unit)) continue;
+    if (!byUnit[unit]) byUnit[unit] = [];
+    var cached = __bankImgCache[item.id] || item.img || '';
+    if (item.img) __bankImgCache[item.id] = item.img;
+    byUnit[unit].push({
+      id: item.id,
+      topic: (item.kp && item.kp[0]) || unit,
+      diff: 1 + (String(item.id).length % 3),
+      stem: plain(item.q),
+      cn: '本题来自练习题库 · ' + (item.r || unit),
+      options: opts.map(plain),
+      answer: item.ans,
+      explain: plain(item.why) + (item.cn ? '\n\n' + plain(item.cn) : ''),
+      hint: (item.kp || []).slice(0, 2).join(' · '),
+      img: cached,
+      hasImg: !!(cached || item.hasImg),
+      imgAlt: item.imgAlt || '',
+      imgRole: item.imgRole || ''
+    });
+  }
+  var count = 0;
+  CHEM.forEach(function (u) {
+    var list = byUnit[String(u.id).toUpperCase()];
+    if (list && list.length) { u.questions = list; count += list.length; }
+  });
+  return count > 0;
+}
+function alignWithPracticeBank(){
+  var pool = null;
+  try {
+    var host = (window.parent && window.parent !== window) ? window.parent : null;
+    if (host && host.__q && Array.isArray(host.__q.pool)) pool = host.__q.pool;
+  } catch (e) { pool = null; }
+  if (pool) applyPracticeBank(pool);
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'AP_FISH_BANK_REQUEST' }, '*');
+    }
+  } catch (e) { /* noop */ }
+}
+window.addEventListener('message', function (e) {
+  var d = e.data;
+  if (!d) return;
+  if (d.type === 'AP_FISH_BANK_DATA' && Array.isArray(d.pool)) { applyPracticeBank(d.pool); return; }
+  if (d.type === 'AP_FISH_IMG_DATA' && d.id) {
+    __bankImgCache[d.id] = d.src || '';
+    if (S && S.curQ && S.curQ.id === d.id) {
+      S.curQ.img = d.src || '';
+      S.curQ.hasImg = false;
+      S.curQ.imgAlt = d.alt || '';
+      S.curQ.imgRole = d.role || '';
+      renderFig(S.curQ);
+    }
+  }
+});
+alignWithPracticeBank();
+setTimeout(alignWithPracticeBank, 300);
+setTimeout(alignWithPracticeBank, 1200);
+
+let UID = 1;
+function newBlade(){
+  return { uid: UID++, state:'blank', unitId:null, value: RULES.BASE_VALUE * (S.buffs.coal ? 1.6 : 1),
+    level:1, dmg:0, insp:0, inspRest:0, inspEver:false,
+    formRoll: Math.floor(Math.random() * 4), form:null, regretUsed:false, apronUsed:false,
+    poolR:null, poolW:null, streakOk:0, streakBad:0, maintain:1, hammers:0 };
+}
+/* 正确池 / 错误池：答对只在正确池抽，答错只在错误池抽 */
+const POOL_R = { success: 13, big: 4, hold: 15 };   // 32 张
+const POOL_W = { damage: 22, break: 10 };           // 32 张（破坏 10 张）
+
+function poolRightCounts(b){
+  const c = { ...POOL_R };
+  c.success += (S.buffs.mithril || 0);
+  if (S.relics.includes('chalk')) c.success += 2;
+  if (S.relics.includes('powder')) c.big += 2;
+  if (resonance('success')) c.big += 3;
+  if (S.relics.includes('roc')) c.big += 2;
+  if (S.buffs.charcoal) c.big += 3;
+  return c;
+}
+function poolWrongCounts(b){
+  const c = { ...POOL_W };
+  if (S.relics.includes('scale')) { const k = Math.min(c.break, 2); c.break -= k; c.damage += k; }
+  if (S.buffs.saliva) { const k = Math.min(c.break, 2); c.break -= k; c.damage += k; }
+  if (b && b.dmg) { const k = Math.min(c.damage, b.dmg); c.break += k; c.damage -= k; }
+  if (S.buffs.coin){ c.hold = (c.hold || 0) + 2; c.success = (c.success || 0) + 1; }   // 幸运币：错误池也可能出维持/成功
+  return c;
+}
+function buildPool(counts){
+  const a = [];
+  for (const k in counts) for (let i = 0; i < counts[k]; i++) a.push(k);
+  return shuffle(a);
+}
+function ensurePools(b){
+  if (!b.poolR || !b.poolR.length) b.poolR = buildPool(poolRightCounts(b));
+  if (!b.poolW || !b.poolW.length) b.poolW = buildPool(poolWrongCounts(b));
+}
+function drawFrom(b, which){
+  ensurePools(b);
+  const pool = which === 'R' ? b.poolR : b.poolW;
+  if (!pool.length) pool.push(...buildPool(which === 'R' ? poolRightCounts(b) : poolWrongCounts(b)));
+  return pool.pop();
+}
+function riskOf(blade){
+  if (!blade) return 0;
+  if (inInsp(blade)) return 0;                            // 入神必不出破坏
+  const w = (blade.poolW && blade.poolW.length) ? blade.poolW : buildPool(poolWrongCounts(blade));
+  return w.filter(t => t === 'break').length / Math.max(1, w.length);
+}
+
+/* ============================================================
+   LOG / TOAST / FLOAT
+   ============================================================ */
+function log(type, text, delta){
+  S.log.unshift({ type, text, delta });
+  S.log = S.log.slice(0, 7);
+  renderLog();
+}
+function renderLog(){
+  $('#log').innerHTML = S.log.map(l =>
+    `<div class="log-row ${l.type}"><b>${esc(l.text)}</b><span class="d">${esc(l.delta||'')}</span></div>`).join('');
+}
+let toastTimer = 0;
+function toast(msg, bad){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2400);
+}
+function floatNum(text, color, x, y){
+  const d = document.createElement('div');
+  d.className = 'float';
+  d.textContent = text;
+  d.style.color = color;
+  d.style.left = x + 'px';
+  d.style.top = y + 'px';
+  d.style.fontSize = '26px';
+  $('#floats').appendChild(d);
+  setTimeout(() => d.remove(), 1150);
+}
+function shake(){
+  const s = $('#stage');
+  s.classList.remove('shake');
+  void s.offsetWidth;
+  s.classList.add('shake');
+}
+/* 上贡失败：龙眼暴红 + 红闪 + 剑被咬成碎片 */
+function dragonBite(x, y){
+  shake();
+  const f = document.getElementById('flash');
+  f.setAttribute('fill', '#ff2a3a');
+  f.setAttribute('opacity', '.42');
+  setTimeout(() => { f.setAttribute('opacity', 0); f.setAttribute('fill', '#fff'); }, 170);
+
+  const g = document.getElementById('stage');
+  const frag = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  let html = '';
+  for (let i = 0; i < 14; i++){
+    const a = Math.random() * Math.PI * 2;
+    const r = 50 + Math.random() * 110;
+    const w = 5 + Math.random() * 16;
+    const h = 3 + Math.random() * 9;
+    html += `<polygon class="shard" points="0,0 ${w.toFixed(1)},${(-h/2).toFixed(1)} ${(w*0.75).toFixed(1)},${(h/2).toFixed(1)}"
+      fill="${i % 3 ? '#ff8a3a' : '#cfdada'}"
+      transform="translate(${x} ${y})"
+      style="--dx:${(Math.cos(a)*r).toFixed(0)}px;--dy:${(Math.sin(a)*r - 30).toFixed(0)}px;--rot:${(Math.random()*720-360).toFixed(0)}deg"/>`;
+  }
+  frag.innerHTML = html;
+  g.appendChild(frag);
+  setTimeout(() => frag.remove(), 900);
+
+  const eye = document.getElementById('dEye');
+  const glow = document.getElementById('dEyeGlow');
+  if (eye){
+    eye.style.transformBox = 'fill-box';
+    eye.style.transformOrigin = 'center';
+    eye.style.transition = 'transform .12s';
+    eye.style.transform = 'scale(1.55)';
+    eye.setAttribute('fill', '#ff2a3a');
+    setTimeout(() => { eye.style.transform = 'scale(1)'; }, 320);
+    setTimeout(() => {
+      eye.setAttribute('fill', S.patience >= 3 ? '#2a1d14' : S.patience === 2 ? '#c9662a' : '#ff5a64');
+      if (glow) glow.setAttribute('opacity', '.12');
+    }, 780);
+  }
+  if (glow) glow.setAttribute('opacity', '.55');
+}
+function flash(op){
+  const f = $('#flash');
+  f.setAttribute('opacity', op);
+  setTimeout(() => f.setAttribute('opacity', 0), 120);
+}
+
+/* ============================================================
+   SWORD RENDER
+   ============================================================ */
+/* ============================================================
+   刀形：每个单元 3 种，由「第一次入神前的战绩」决定
+   ============================================================ */
+const FORMS = {
+  U1: [
+    { name:'谱线直刃', en:'SPECTRAL STRAIGHT', shape:'straight', tint:'#cfdada', wMul:1.00 },
+    { name:'轨道弯刀', en:'ORBITAL CURVE',     shape:'curve',    tint:'#9fe1cb', wMul:1.00 },
+    { name:'周期宽锋', en:'PERIODIC BROAD',    shape:'broad',    tint:'#ffd166', wMul:1.08 },
+    { name:'回火弧刃', en:'TEMPERED SABER', shape:'saber', tint:'#e8c9a0', wMul:1.00 }
+  ],
+  U2: [
+    { name:'晶格方刃', en:'LATTICE EDGE',      shape:'straight', tint:'#b5d4f4', wMul:1.12 },
+    { name:'层错锯齿', en:'STACKING SERRATE',  shape:'serrate',  tint:'#85b7eb', wMul:0.95 },
+    { name:'八面宽锋', en:'OCTAHEDRAL BROAD',  shape:'broad',    tint:'#7f77dd', wMul:1.10 },
+    { name:'晶界波浪', en:'GRAIN WAVE',     shape:'wave',  tint:'#a8c8ef', wMul:1.04 }
+  ],
+  U3: [
+    { name:'氢键细剑', en:'H-BOND RAPIER',     shape:'spike',    tint:'#9fe1cb', wMul:0.88 },
+    { name:'霜纹弯刀', en:'FROST CURVE',       shape:'curve',    tint:'#5dcaa5', wMul:0.98 },
+    { name:'冰晶枪刃', en:'ICE LANCE',         shape:'wave',     tint:'#a9f4e8', wMul:1.00 },
+    { name:'霜棱锯齿', en:'FROST SERRATE',  shape:'serrate',tint:'#7fd8c9', wMul:0.96 }
+  ],
+  U4: [
+    { name:'配平直刀', en:'BALANCED STRAIGHT', shape:'straight', tint:'#f5c4b3', wMul:1.02 },
+    { name:'摩尔细刃', en:'MOLE EDGE',         shape:'spike',    tint:'#f0997b', wMul:0.86 },
+    { name:'当量重斩', en:'EQUIVALENT CLEAVER',shape:'broad',    tint:'#d85a30', wMul:1.16 },
+    { name:'当量弯刀', en:'QUANT CURVE',    shape:'curve', tint:'#e9a08a', wMul:1.02 }
+  ],
+  U5: [
+    { name:'催化疾刃', en:'CATALYTIC EDGE',    shape:'straight', tint:'#fac775', wMul:0.94 },
+    { name:'活化弯刀', en:'ACTIVATION CURVE',  shape:'curve',    tint:'#ef9f27', wMul:1.00 },
+    { name:'链式波浪', en:'CHAIN FLAMBERGE',   shape:'wave',     tint:'#ff9a4a', wMul:1.04 },
+    { name:'活化尖锋', en:'ACTIVATION SPIKE',shape:'spike',tint:'#ffbf5e', wMul:0.90 }
+  ],
+  U6: [
+    { name:'焓熵长刀', en:'ENTHALPY BLADE',    shape:'wave',     tint:'#cecbf6', wMul:1.00 },
+    { name:'自由能弯刃', en:'GIBBS CURVE',     shape:'curve',    tint:'#afa9ec', wMul:1.06 },
+    { name:'吉布斯重剑', en:'GIBBS GREATSWORD',shape:'broad',    tint:'#d6c9ff', wMul:1.18 },
+    { name:'熵流弧刃', en:'ENTROPY SABER',  shape:'saber', tint:'#c6bdf2', wMul:1.12 }
+  ],
+  U7: [
+    { name:'平衡直刃', en:'EQUILIBRIUM EDGE',  shape:'straight', tint:'#c0dd97', wMul:1.00 },
+    { name:'勒夏特列锯齿', en:'LECHATELIER SAW',shape:'serrate', tint:'#97c459', wMul:1.02 },
+    { name:'缓冲宽锋', en:'BUFFER BROAD',      shape:'broad',    tint:'#eaf3de', wMul:1.06 },
+    { name:'缓冲弯刃', en:'BUFFER CURVE',   shape:'curve', tint:'#a9cf7c', wMul:1.00 }
+  ],
+  U8: [
+    { name:'质子细剑', en:'PROTON RAPIER',     shape:'spike',    tint:'#f4c0d1', wMul:0.84 },
+    { name:'滴定长刃', en:'TITRATION BLADE',   shape:'curve',    tint:'#ed93b1', wMul:1.02 },
+    { name:'缓冲重斩', en:'BUFFER CLEAVER',    shape:'broad',    tint:'#d4537e', wMul:1.14 },
+    { name:'滴定波浪', en:'TITRATION WAVE', shape:'wave',  tint:'#f2a7c8', wMul:0.88 }
+  ],
+  U9: [
+    { name:'电蚀锯齿', en:'ETCHED SERRATE',    shape:'serrate',  tint:'#8fd8ff', wMul:1.08 },
+    { name:'原电池弯刀', en:'GALVANIC CURVE',  shape:'curve',    tint:'#65f5df', wMul:0.96 },
+    { name:'电解尖锋', en:'ELECTROLYTIC SPIKE',shape:'spike',    tint:'#b79bff', wMul:0.90 },
+    { name:'电镀波浪', en:'PLATED WAVE',    shape:'wave',  tint:'#9fe6ff', wMul:1.06 }
+  ]
+};
+/* 六种刀身轮廓：直刃 / 弯刀 / 宽锋 / 锯齿 / 波浪 / 尖锋 */
+function bladePath(shape, L, w){
+  const W = w;
+  if (shape === 'curve'){
+    return `M0 ${-W} C${-L*0.42} ${-W*1.35} ${-L*0.78} ${-W*1.2} ${-L} ${-W*1.65}`
+         + ` C${-L*0.78} ${-W*0.1} ${-L*0.4} ${W*0.55} 0 ${W} Z`;
+  }
+  if (shape === 'broad'){
+    return `M0 ${-W*1.05} L${-L*0.78} ${-W*1.35} L${-L} ${-W*0.45} L${-L+9} ${W*1.2} L0 ${W} Z`;
+  }
+  if (shape === 'serrate'){
+    let d = `M0 ${-W} L${-L*0.7} ${-W*0.6} L${-L} ${-W*0.1}`;
+    const n = 9;
+    for (let i = 1; i <= n; i++){
+      const x = -L + L * (i / n);
+      const y = (i % 2) ? W * 1.18 : W * 0.42;
+      d += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    return d + ' Z';
+  }
+  if (shape === 'wave'){
+    let d = `M0 ${-W}`;
+    const n = 5;
+    for (let i = 1; i <= n; i++){
+      const x = -L * (i / n);
+      const y = (i % 2) ? -W * 0.18 : -W * 0.95;
+      d += ` Q${(x + L / (n * 2)).toFixed(1)} ${(i % 2 ? -W * 1.25 : -W * 0.02).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    d += ` L0 ${W} Z`;
+    return d;
+  }
+  if (shape === 'saber'){
+    return `M0 ${-W*0.92} Q${-L*0.66} ${-W*2.0} ${-L} ${-W*0.15}`
+         + ` Q${-L*0.5} ${W*1.55} 0 ${W*1.05} Z`;
+  }
+  if (shape === 'spike'){
+    return `M0 ${-W*0.75} L${-L*0.82} ${-W*0.24} L${-L} 0 L${-L*0.82} ${W*0.26} L0 ${W*0.75} Z`;
+  }
+  return `M0 ${-W} L${-L+16} ${-W*0.52} L${-L} 0 L${-L+16} ${W*0.52} L0 ${W} Z`;
+}
+/* 第一次入神时显形：刀形在发胚时就随机掷定，只跟单元相关 */
+function revealForm(b){
+  const list = FORMS[b.unitId] || FORMS.U1;
+  const idx = (b.formRoll == null ? Math.floor(Math.random() * list.length) : b.formRoll) % list.length;
+  b.form = idx; b.inspEver = true;
+  const f = list[idx];
+  log('insp', `刀形 · ${f.name}`, `${b.unitId} · ${f.en}`);
+  toast(`刀形显形：${f.name}（${f.en}）`);
+  floatNum(f.name, '#65f5df', 520, 200);
+}
+function formOf(blade){
+  if (!blade || blade.form == null) return null;
+  const list = FORMS[blade.unitId];
+  return list ? list[blade.form] : null;
+}
+function swordMarkup(blade){
+  const lv = Math.min(RULES.LEVEL_CAP, blade.level);
+  const f = formOf(blade);
+  const L = 128 + lv * 11;
+  const w = (7 + lv * 0.42) * (f && f.wMul ? f.wMul : 1);
+  const tier = tierOf(lv);
+  const hot = blade.state === 'hot' || blade.state === 'heating';
+  const insp = inInsp(blade);
+  const fill = hot ? 'url(#hotSteel)' : 'url(#steel)';
+  const shape = f ? f.shape : 'straight';
+  const edgeCol = insp ? 'url(#rainbow)' : (f ? f.tint : TIER_COLOR[tier]);
+  const glowOp = hot ? .6 : .2 + tier * .14;
+  const d = bladePath(shape, L, w);
+  return `
+    <path d="${d}" fill="${fill}" stroke="${edgeCol}" stroke-width="1.1"/>
+    <path d="M0 ${-w*0.5} L${-L*0.8} ${-w*(shape==='broad'?0.95:0.34)}" stroke="rgba(255,255,255,.32)" stroke-width="1" fill="none"/>
+    <path d="${d}" fill="none" stroke="${edgeCol}" stroke-width="2.2" opacity="${glowOp}" filter="url(#glow)"/>
+    ${insp ? `<path d="${d}" fill="url(#rainbow)" opacity=".28" filter="url(#glow)"/>` : ''}
+    <rect x="-15" y="${-w-9}" width="16" height="${(w+9)*2}" rx="5" fill="#1a2228" stroke="${edgeCol}" stroke-width="1.1"/>
+    <path d="M1 -11 L78 -7 L88 0 L78 7 L1 11 Z" fill="#2c1c12" stroke="#8a6338" stroke-width="1.1"/>
+    <circle cx="96" cy="0" r="7" fill="#8a6338" stroke="${edgeCol}" stroke-width="1.1"/>
+  `;
+}
+function renderSword(){
+  const g = $('#theSword');
+  const b = S.active;
+  if (!b){ g.setAttribute('opacity','0'); return; }
+  g.setAttribute('opacity','1');
+  g.innerHTML = swordMarkup(b);
+  const pos = swordPos();
+  g.style.transform = `translate(${pos.x}px,${pos.y}px) rotate(${pos.r}deg) scale(${pos.s})`;
+}
+function swordPos(){
+  const b = S.active;
+  if (!b) return { x:600, y:400, r:0, s:1 };
+  if (b.state === 'heating') return { x:176, y:300, r:90, s:.62 };
+  if (b.state === 'tributing') return { x:880, y:386, r:-4, s:.9 };
+  if (b.state === 'relic') return { x:1082, y:410, r:90, s:.42 };
+  return { x:650, y:384, r:-4, s:.95 };
+}
+/* 落点：沿剑身取 45% 处（剑柄在 x=650，剑身向 -4° 方向延伸） */
+function anvilImpact(){
+  const b = S.active;
+  const lv = b ? Math.min(RULES.LEVEL_CAP, b.level) : 6;
+  const L = (128 + lv * 11) * 0.95;
+  const t = 0.45;
+  const rad = 4 * Math.PI / 180;
+  return { x: 650 - L * t * Math.cos(rad), y: 384 + L * t * Math.sin(rad) };
+}
+/* 锤子以「柄的最右端」为圆心做圆弧挥击：
+   锤头中心在本地坐标 (−R, 0)，旋转 θ 后 = 圆心 + (−R·cosθ, −R·sinθ)。
+   命中帧 θ = −8° 时锤头正好压在落点上，于是圆心 = 落点 + (R·cosθ, R·sinθ)。 */
+const HAMMER_R = 111;
+const HAMMER_HIT = -8 * Math.PI / 180;
+function layoutHammer(){
+  const p = anvilImpact();
+  S.impact = p;
+  const px = p.x + HAMMER_R * Math.cos(HAMMER_HIT);
+  const py = p.y + HAMMER_R * Math.sin(HAMMER_HIT);
+  const w = $('#hammerWrap');
+  if (w) w.style.transform = `translate(${px.toFixed(1)}px,${py.toFixed(1)}px)`;
+  return p;
+}
+function renderHammer(){
+  const h = $('#hammerWrap');
+  h.setAttribute('opacity', S.scene === 'anvil' ? '1' : '0');
+  if (S.scene === 'anvil') layoutHammer();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  $('#hDay').textContent = S.day;
+  $('#hQuota').textContent = fmtV(S.quota);
+  $('#hGold').textContent = S.gold;
+  const pips = $('#hPatience').children;
+  for (let i=0;i<pips.length;i++) pips[i].className = i < S.patience ? 'on' : '';
+  const eye = $('#dEye');
+  eye.setAttribute('fill', S.patience >= 3 ? '#2a1d14' : S.patience === 2 ? '#c9662a' : '#ff5a64');
+  $('#dEyeGlow').setAttribute('fill', S.patience >= 3 ? '#ff7a2f' : S.patience === 2 ? '#ff6a22' : '#ff2a3a');
+
+  renderRack();
+  renderSwordRack();
+  renderInv();
+  renderSword();
+  renderHammer();
+  renderStatus();
+  renderActions();
+  renderLog();
+}
+
+function renderRack(){
+  const el = $('#rack');
+  const cards = S.blades.map((b,i) => {
+    if (b.state === 'blank'){
+      return `<button class="billet" data-billet="${b.uid}">
+        <b>剑胚 ${i+1}</b><span>BLANK · 点它选化学单元</span></button>`;
+    }
+    if (b.state === 'broken') return `<div class="billet gone"><b>剑胚 ${i+1}</b><span>已碎</span></div>`;
+    if (b.state === 'relic') return `<div class="billet gone"><b>剑胚 ${i+1}</b><span>已献祭</span></div>`;
+    if (b.state === 'tributing') return `<div class="billet"><b>剑胚 ${i+1}</b><span>在贡台上</span></div>`;
+    if (b.state === 'tribute') return `<div class="billet gone"><b>剑胚 ${i+1}</b><span>已上贡 · ${fmtV(b.value)}</span></div>`;
+    if (b.state === 'forged') return `<button class="billet" data-focus="${b.uid}"><b>剑胚 ${i+1} · ${fmtV(b.value)}</b><span>${formOf(b) ? formOf(b).name + ' · ' : ''}LV ${b.level} · 已锻 · 点它上砧</span></button>`;
+    const active = S.active && S.active.uid === b.uid;
+    const fm = formOf(b);
+    return `<button class="billet ${active?'':''}" data-focus="${b.uid}">
+      <b>剑胚 ${i+1} · ${fmtV(b.value)}</b><span>${fm ? fm.name + ' · ' : ''}LV ${b.level} · 破坏 ${Math.round(riskOf(b)*100)}%${active?' · 在砧上':''}</span></button>`;
+  }).join('');
+  el.innerHTML = `<span class="label">BILLET RACK</span>` + (cards || '<div class="billet gone"><b>—</b><span>今日无剑胚</span></div>');
+}
+
+/* 刀架：三个横档，各放一把（保留 value/level/deck） */
+const RACK_RAILS = [330, 386, 442];
+function renderSwordRack(){
+  const blades = document.getElementById('rackBlades');
+  const hits = document.getElementById('rackHits');
+  if (!blades || !hits) return;
+  let art = '', hit = '';
+  RACK_RAILS.forEach((y, i) => {
+    const b = S.rack[i];
+    if (b){
+      const Lv = Math.min(RULES.LEVEL_CAP, b.level);
+      const L = 128 + Lv * 11;
+      const s = Math.min(.34, 116 / (L + 96));
+      const gx = 300 + L * s;
+      art += `<g transform="translate(${gx.toFixed(1)} ${y}) rotate(-3) scale(${s.toFixed(3)})" style="cursor:pointer">${swordMarkup(b)}</g>`;
+      hit += `<rect x="292" y="${y - 50}" width="136" height="58" fill="transparent" style="cursor:pointer" data-rackslot="${i}"/>`;
+    } else {
+      art += `<text x="358" y="${y - 12}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#3e4c52" letter-spacing="1">空位 ${i+1}</text>`;
+    }
+  });
+  blades.innerHTML = art;
+  hits.innerHTML = hit;
+}
+function takeFromRack(i){
+  const b = S.rack[i];
+  if (!b) return;
+  if (S.active){ toast('先把砧上这把处理掉。', true); return; }
+  S.rack.splice(i, 1);
+  b.state = 'hot';
+  ensurePools(b);
+  S.active = b; S.scene = 'anvil';
+  render();
+  toast(`从刀架取下 LV${b.level} 的剑（价值 ${fmtV(b.value)}）。`);
+}
+/* ---------- 道具袋 ---------- */
+function invGroups(){
+  const out = [];
+  S.inv.forEach(id => {
+    const g = out.find(x => x.id === id);
+    if (g) g.n++; else out.push({ id, n: 1 });
+  });
+  return out;
+}
+function renderInv(){
+  const bar = document.getElementById('invBar');
+  if (!bar) return;
+  if (!S.inv.length){ bar.classList.add('hidden'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden');
+  bar.innerHTML = `<span class="inv-tip">道具袋</span>` + invGroups().map(g => {
+    const m = MERCHANT[g.id];
+    if (!m) return '';
+    return `<span class="inv-chip" title="${esc(m.desc)}">${m.name}${g.n > 1 ? ` <b style="color:#ffd166">×${g.n}</b>` : ''}<button type="button" data-use="${g.id}">使用</button></span>`;
+  }).join('');
+}
+const NEED_BLADE_ITEMS = ['saliva', 'dust', 'sand'];
+function useInv(id){
+  if (typeof id === 'number') id = S.inv[id];      // 兼容旧调用
+  const idx = S.inv.indexOf(id);
+  if (idx < 0) return;
+  const m = MERCHANT[id];
+  if (!m) return;
+  const b = S.active;
+  if (NEED_BLADE_ITEMS.includes(id) && !(b && b.state === 'hot')){
+    toast('先拿一把刀上砧，再用这个。', true);
+    return;
+  }
+  let msg = '';
+  if (id === 'coal'){
+    if (b && b.state === 'hot'){ b.value = Math.round(b.value * 1.6); msg = '这把刀的价值 ×1.6'; }
+    else { S.buffs.coal = true; msg = '下一把剑起始价值 ×1.6'; }
+  } else if (id === 'stone'){ S.buffs.stone = true; msg = '烧毁将被抵消一次'; }
+  else if (id === 'saliva'){ ensurePools(b); let n = 2; b.poolW = b.poolW.map(t => (n > 0 && t === 'break') ? (n--, 'damage') : t); msg = '错误池抽走 2 张破坏'; }
+  else if (id === 'sand'){ b.insp = inspNeed(); msg = '入神充能已满'; }
+  else if (id === 'mithril'){ S.buffs.mithril = 3; msg = '今日签筒 +3 张成功'; }
+  else if (id === 'file'){ S.buffs.file = true; msg = '今日成功额外 +8% 价值'; }
+  else if (id === 'gloves'){ S.buffs.gloves = true; paintHeatWindow(); msg = '今日加热窗口放宽'; }
+  else if (id === 'dust'){ ensurePools(b); b.poolW = b.poolW.map(t => t === 'break' ? 'damage' : t); msg = '破坏全换成损伤'; }
+  else if (id === 'bandage'){ S.buffs.bandage = true; msg = '今日第一次断刀会被抵消'; }
+  else if (id === 'talisman'){ S.buffs.talisman = true; msg = '今日入神充能需求 −3'; }
+  else if (id === 'chisel'){ S.buffs.chisel = true; msg = '今日连对 2 次即大成功'; }
+  else if (id === 'lamp'){ S.buffs.lamp = true; msg = '今日入神时长 45 秒'; }
+  else if (id === 'charcoal'){ S.buffs.charcoal = true; msg = '今日正确池 +3 张大成功'; }
+  else if (id === 'coin'){ S.buffs.coin = true; msg = '今日错误池 +2 维持 +1 成功'; }
+  else if (id === 'mirror'){ if (b){ b.poolR = null; b.poolW = null; ensurePools(b); } msg = '签筒已重洗'; }
+  S.inv.splice(idx, 1);
+  log('day', `使用 ${m.name}`, msg);
+  toast(`${m.name}：${msg}。`);
+  render();
+}
+function renderStatus(){
+  const b = S.active;
+  const set = (id, v) => { $(id).textContent = v; };
+  if (!b){ set('#sValue','—'); set('#sLevel','—'); set('#sRisk','—'); set('#sInsp','—');
+    $('#sRiskBar').style.width = '0%'; $('#sInspBar').style.width = '0%';
+    const el2 = $('#deckCounts'); if (el2) el2.textContent = '正确池 / 错误池 —';
+    const el3 = $('#schoolLine'); if (el3) el3.textContent = '';
+    return; }
+  set('#sValue', fmtV(b.value));
+  const fm = formOf(b);
+  set('#sLevel', `${fm ? fm.name : '未定形'} · ${TIER_NAME[tierOf(b.level)]} LV ${b.level}`);
+  const r = riskOf(b);
+  set('#sRisk', `${Math.round(r*100)}%`);
+  $('#sRiskBar').style.width = `${clamp(r*100,0,100)}%`;
+  const need = inspNeed();
+  set('#sInsp', inInsp(b) ? `入神 ${b.inspRest.toFixed(1)}s` : `${b.insp} / ${need}`);
+  $('#sInspBar').style.width = inInsp(b) ? `${clamp(b.inspRest/inspSeconds()*100,0,100)}%` : `${clamp(b.insp/need*100,0,100)}%`;
+  ensurePools(b);
+  const cnt = (pool, t) => pool.filter(x => x === t).length;
+  $('#deckCounts').innerHTML =
+    `正确池 <b class="sc">成 ${cnt(b.poolR,'success')}</b> / <b class="bg">大 ${cnt(b.poolR,'big')}</b> / <b class="hd">维 ${cnt(b.poolR,'hold')}</b>`
+    + `<br>错误池 <b class="dm">损 ${cnt(b.poolW,'damage')}</b> / <b class="bk">破 ${cnt(b.poolW,'break')}</b>`
+    + (cnt(b.poolW,'hold') ? ` / <b class="hd">维 ${cnt(b.poolW,'hold')}</b>` : '')
+    + (cnt(b.poolW,'success') ? ` / <b class="sc">成 ${cnt(b.poolW,'success')}</b>` : '')
+    + `　连对 ${b.streakOk % 3}/3 · 连错 ${b.streakBad}/3 · 维持 ${b.maintain}`;
+  const rs = activeSchools();
+  $('#schoolLine').innerHTML = rs.length
+    ? '流派共鸣：' + rs.map(k => `<span style="color:${SCHOOLS[k].color}">${SCHOOLS[k].name}</span>`).join(' · ')
+    : '';
+}
+const inspNeed = () => {
+  let n = RULES.INSP_CHARGE;
+  if (S.relics.includes('stardust')) n -= 3;
+  if (resonance('guard')) n -= 2;
+  if (S.buffs.talisman) n -= 3;
+  return Math.max(3, n);
+};
+
+function renderActions(){
+  const a = $('#actions');
+  const b = S.active;
+  const can = (cond) => cond ? '' : 'disabled';
+  if (S.scene === 'over'){ a.innerHTML = `<button class="btn primary wide" id="aRestart">再来一局</button>`; bind(); return; }
+  if (!b){
+    a.innerHTML = `<button class="btn primary" id="aTake" ${can(S.blades.some(x=>x.state==='blank'))}>取剑胚 · 进熔炉</button>
+      <button class="btn ghost" id="aEndDay">收工</button>`;
+    bind(); return;
+  }
+  if (b.state === 'heating'){
+    a.innerHTML = `<button class="btn primary" id="aPull">取出 · 上砧</button>`;
+    bind(); return;
+  }
+  if (b.state === 'hot'){
+    a.innerHTML = `<button class="btn primary" id="aStrike">敲击 · 做题</button>
+      <button class="btn gold" id="aTribute" ${can(b.value >= 1)}>放上贡台</button>
+      <button class="btn relic" id="aRelic" ${can(S.relics.length < 3)}>献剑换遗物</button>
+      <button class="btn ghost" id="aBench">放回剑架</button>`;
+    bind(); return;
+  }
+  if (b.state === 'tributing'){
+    a.innerHTML = `<button class="btn gold" id="aRing">摇铃 · 上贡</button>
+      <button class="btn ghost" id="aBack">把剑拿回来</button>`;
+    bind(); return;
+  }
+  a.innerHTML = '';
+}
+function bind(){
+  const q = id => document.getElementById(id);
+  if (q('aTake')) q('aTake').onclick = takeBillet;
+  if (q('aStrike')) q('aStrike').onclick = strike;
+  if (q('aTribute')) q('aTribute').onclick = toAltar;
+  if (q('aRelic')) q('aRelic').onclick = openRelic;
+  if (q('aBench')) q('aBench').onclick = putBack;
+  if (q('aRing')) q('aRing').onclick = ringBell;
+  if (q('aBack')) q('aBack').onclick = backFromAltar;
+  if (q('aEndDay')) q('aEndDay').onclick = endDay;
+  if (q('aRestart')) q('aRestart').onclick = () => { closeAll(); reset(); };
+  if (q('aPull')) q('aPull').onclick = pullFromFurnace;
+}
+
+/* ============================================================
+   DAY / RUN
+   ============================================================ */
+function reset(){
+  S.day = 1; S.gold = 0; S.patience = RULES.PATIENCE;
+  S.relics = []; S.rack = []; S.inv = []; S.fails = 0; S.log = []; S.survived = 0; S.relicsMade = 0; S.bladesBroken = 0; S.bestValue = 0;
+  S.buffs = { coal:false, stone:false, saliva:false, mithril:0, file:false, gloves:false, bandage:false, talisman:false, chisel:false, lamp:false, charcoal:false, coin:false };
+  S.merchantDay = -99; S.merchantStock = []; S.merchMul = 1; S.billetBought = 0;
+  S.scene = 'idle'; S.active = null; S.busy = false; S.resultAction = null;
+  startDay(true);
+}
+function startDay(first){
+  S.quota = quotaFor(S.day);
+  if (S.relics.includes('ledger')) S.quota = Math.max(30, Math.round(S.quota * 0.92));
+  S.offered = false;
+  S.penalizedToday = false;
+  S.buffs.coal = false; S.buffs.stone = false; S.buffs.saliva = false; S.buffs.mithril = 0; S.buffs.file = false; S.buffs.gloves = false; S.buffs.bandage = false; S.buffs.talisman = false; S.buffs.chisel = false; S.buffs.lamp = false; S.buffs.charcoal = false; S.buffs.coin = false;
+  const n = RULES.BLADES_PER_DAY + (S.relics.includes('ticket') ? 1 : 0);
+  // 跨天保留：昨天没用上的空白剑胚计入今天，今天的刷新量仍是 n（所以总数 = n + 剩余）
+  const carried = first ? [] : S.blades.filter(b => b.state === 'blank');
+  S.blades = Array.from({ length: n }, () => newBlade()).concat(carried);
+  S.active = null; S.scene = 'idle';
+  log('day', `第 ${S.day} 天`, `贡品 ${fmtV(S.quota)}${carried.length ? ` · 昨日余 ${carried.length} 剑胚` : ''}`);
+  render();
+  if (!first) { /* 商人 */ }
+  if (S.day % 3 === 0 && S.day !== S.merchantDay){
+    S.merchantDay = S.day;
+    rollMerchant();
+    setTimeout(() => openMerchant(), 420);
+  }
+}
+const MERCHANT_REROLL_COST = 120;
+function rollMerchant(){
+  S.merchantStock = shuffle([...MERCHANT_IDS]).slice(0, 4).map(id => MERCHANT[id]);
+  S.merchMul = (S.merchMul || 1) * 2;     // 每次刷新，整架商品价格翻倍
+  S.billetBought = 0;                      // 备用剑胚限购重置
+}
+/* 实际售价：基础价 × e^(0.1·天) × 刷新翻倍系数 */
+function priceOf(m){
+  let p = m.price * merchantMul() * (S.merchMul || 1);
+  if (S.relics.includes('haggle')) p *= 0.85;     // 讨价：全场 85 折
+  return Math.round(p);
+}
+const rerollCost = () => Math.round(MERCHANT_REROLL_COST * merchantMul());
+function rerollMerchant(){
+  const rc = rerollCost();
+  if (S.gold < rc){ toast(`重掷货架需要 ${rc} 金币。`, true); return; }
+  S.gold -= rc;
+  rollMerchant();
+  openMerchant();
+  render();
+  toast('幽灵商人换了三件货。');
+}
+/* ---------- 选单元 ---------- */
+function pickUnitFor(b, mode){
+  if (!b) return;
+  if (!mode && b.state !== 'blank') return;
+  if (!mode && S.active){ toast('先把砧上这把处理掉。', true); return; }
+  S.pendingBillet = b;
+  S.pendingMode = mode || 'heat';
+  renderUnitPicker();
+  open('mUnit');
+}
+function renderUnitPicker(){
+  const g = document.getElementById('unitGrid');
+  if (!g) return;
+  g.innerHTML = CHEM.map(u => `<button class="unit-card" data-unit="${u.id}" type="button">
+    <div class="u-id">${u.id} · ${u.questions.length} 题</div>
+    <h4>${esc(u.name)}</h4>
+    <small>${esc(u.topics.join(' · '))}</small>
+  </button>`).join('');
+  g.querySelectorAll('[data-unit]').forEach(el => {
+    el.onclick = () => chooseUnit(el.dataset.unit);
+  });
+}
+function chooseUnit(id){
+  const b = S.pendingBillet;
+  if (!b) return;
+  const mode = S.pendingMode;
+  b.unitId = id;
+  S.pendingBillet = null; S.pendingMode = null;
+  close('mUnit');
+  if (mode === 'ready'){
+    // 二手打刀：已经成品了，只补一个单元，直接留在砧上
+    b.poolR = null; b.poolW = null;
+    S.active = b; S.scene = 'anvil';
+    render();
+    toast(`二手打刀绑定了「${CHEM_BY_ID[id].name}」。`);
+    return;
+  }
+  takeBilletWith(b);
+}
+function takeBillet(){
+  const b = S.blades.find(x => x.state === 'blank');
+  if (!b) { toast('今天没有剑胚了。', true); return; }
+  pickUnitFor(b);
+}
+/* 加热窗口：火绒盒 / 隔热手套会把起点往下压，等于给更多容错 */
+function heatWindow(){
+  let lo = RULES.HEAT_WINDOW[0], hi = RULES.HEAT_WINDOW[1];
+  if (S.relics.includes('tinder')) lo -= 0.15;
+  if (S.buffs.gloves) lo -= 0.15;
+  return [Math.max(0.12, lo), Math.min(0.97, hi)];
+}
+function heatColor(t){
+  const [lo, hi] = heatWindow();
+  return t < lo ? '#ffb15c' : t <= hi ? '#7dffb2' : '#ff5a64';
+}
+function paintHeatWindow(){
+  const [lo, hi] = heatWindow();
+  const m = document.getElementById('heatMark');
+  if (!m) return;
+  m.setAttribute('x', (110 + lo * 132).toFixed(1));
+  m.setAttribute('width', Math.max(6, (hi - lo) * 132).toFixed(1));
+}
+function beginHeat(){
+  const b = S.active;
+  S.heating = true;
+  S.heatT = 0;
+  $('#heatGauge').setAttribute('opacity','1');
+  $('#fSparks').setAttribute('opacity','0');
+  paintHeatWindow();
+  const t0 = performance.now();
+  cancelAnimationFrame(S.heatRAF);
+  const step = now => {
+    if (!S.heating || !S.active) return;
+    S.heatT = clamp((now - t0) / RULES.HEAT_MS, 0, 1.35);
+    $('#heatFill').setAttribute('width', String(132 * Math.min(1, S.heatT)));
+    $('#heatFill').setAttribute('fill', heatColor(S.heatT));
+    if (S.heatT >= 1.35){ burnBlade(); return; }
+    S.heatRAF = requestAnimationFrame(step);
+  };
+  S.heatRAF = requestAnimationFrame(step);
+  renderActions();
+  toast('看准绿色窗口再取出——烧过头就废了。');
+}
+function pullFromFurnace(){
+  if (!S.heating) return;
+  S.heating = false;
+  cancelAnimationFrame(S.heatRAF);
+  const t = S.heatT;
+  const [lo, hi] = heatWindow();
+  const b = S.active;
+  $('#heatGauge').setAttribute('opacity','0');
+  if (t < lo){
+    toast('还没烧透，再等一会儿。', true);
+    S.heating = true;
+    beginHeat2();
+    return;
+  }
+  if (t > hi){
+    burnBlade();
+    return;
+  }
+  b.state = 'hot';
+  const perfect = t < lo + 0.1;
+  if (perfect) { b.insp = 2; log('insp', '完美透烧', '入神充能 +2'); }
+  S.scene = 'anvil';
+  render();
+  toast(perfect ? '完美透烧：剑身通体橙红，入神充能 +2。' : '取出上砧。');
+}
+function beginHeat2(){
+  // 继续加热：从当前进度接着涨
+  const start = S.heatT;
+  const t0 = performance.now();
+  const step = now => {
+    if (!S.heating || !S.active) return;
+    S.heatT = clamp(start + (now - t0)/RULES.HEAT_MS, 0, 1.35);
+    $('#heatFill').setAttribute('width', String(132 * Math.min(1, S.heatT)));
+    $('#heatFill').setAttribute('fill', heatColor(S.heatT));
+    if (S.heatT >= 1.35){ burnBlade(); return; }
+    S.heatRAF = requestAnimationFrame(step);
+  };
+  cancelAnimationFrame(S.heatRAF);
+  S.heatRAF = requestAnimationFrame(step);
+}
+function burnBlade(){
+  const b = S.active;
+  S.heating = false;
+  cancelAnimationFrame(S.heatRAF);
+  $('#heatGauge').setAttribute('opacity','0');
+  if (S.buffs.stone){ S.buffs.stone = false; toast('补炉石生效：这次没烧毁。'); S.heatT = 0; beginHeat(); return; }
+  b.state = 'broken';
+  S.bladesBroken++;
+  log('break', '烧毁', '剑胚报废');
+  flash(.5); shake();
+  S.active = null; S.scene = 'idle';
+  render();
+  toast('烧过头了，剑胚直接报废。', true);
+  checkDayStall();
+}
+/* ============================================================
+   锻打 = 做题。答对进正确池、答错进错误池，池内再抽签决定结果
+   ============================================================ */
+function swingOnce(){
+  const ip = layoutHammer();
+  const h = $('#hammerSwing');
+  h.classList.remove('swing');
+  void h.getBoundingClientRect();
+  h.classList.add('swing');
+  spawnSparks(ip);
+  impactRing(ip);
+  setTimeout(() => h.classList.remove('swing'), 380);
+}
+const inInsp = b => !!b && b.inspRest > 0;
+const inspSeconds = () => S.buffs.lamp ? 45 : 30;
+function renderFig(q){
+  var box = document.getElementById('qFig');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!q) return;
+  if (q.img) {
+    var img = document.createElement('img');
+    img.src = q.img;
+    img.alt = q.imgAlt || '题目配图';
+    img.loading = 'lazy';
+    box.appendChild(img);
+    if (q.imgRole) {
+      var cap = document.createElement('div');
+      cap.className = 'q-fig-cap';
+      cap.textContent = '看图要点 · ' + q.imgRole;
+      box.appendChild(cap);
+    }
+    return;
+  }
+  if (q.hasImg) {
+    var tip = document.createElement('div');
+    tip.className = 'q-fig-loading';
+    tip.textContent = '正在加载题目配图…';
+    box.appendChild(tip);
+    try { window.parent.postMessage({ type: 'AP_FISH_IMG_REQUEST', id: q.id }, '*'); } catch (e) { /* noop */ }
+  }
+}
+function openQuestion(inspMode){
+  const b = S.active;
+  if (!b || b.state !== 'hot') return;
+  if (S.busy && !inspMode) return;   // 入神是连续作答，不等落锤冷却
+  if (!b.unitId){ pickUnitFor(b, 'ready'); return; }
+  const unit = CHEM_BY_ID[b.unitId];
+  if (!S.qQueue[b.unitId] || !S.qQueue[b.unitId].length) S.qQueue[b.unitId] = shuffle([...unit.questions]);
+  const q = S.qQueue[b.unitId].pop();
+  S.curQ = q; S.answered = false; S.lastAnswer = null;
+  $('#qMeta').textContent = `${unit.id} · ${unit.name} · 第 ${b.hammers + 1} 锤`;
+  $('#qTopic').textContent = `${q.topic} · ${unit.en}`;
+  $('#qStem').textContent = q.stem;
+  renderFig(q);
+  $('#qCn').textContent = q.cn;
+  $('#qOpts').innerHTML = q.options.map((opt, i) =>
+    `<button class="q-opt" type="button" data-opt="${i}"><span class="letter">${'ABCD'[i]}</span><span>${esc(opt)}</span></button>`).join('');
+  const fb = $('#qFb');
+  fb.classList.add('hidden'); fb.className = 'q-fb hidden';
+  $('#qNext').classList.add('hidden');
+  const on = inInsp(b);
+  $('#qTimerWrap').classList.toggle('hidden', !on);
+  const m = $('#qMaintain');
+  m.classList.remove('hidden');
+  m.disabled = !on && b.maintain <= 0;
+  m.textContent = (!on && b.maintain <= 0) ? '维持（无次数）' : '维持 · 跳过';
+  $('#qMaintainHint').textContent = on ? '入神中：维持不限次数 · 答对答错都直接落锤'
+    : (b.maintain > 0 ? '跳过这题：评级不变，仍然给出解析' : `再锻打 ${10 - (b.hammers % 10)} 次补充 1 次维持`);
+  open('mQuiz');
+  S.busy = true;
+  setTimeout(() => S.busy = false, 160);
+  if (on) showInspClock(b);
+}
+/* ---------- 入神：30 秒高速作答 ---------- */
+function showInspClock(b){
+  $('#qTimerNum').textContent = b.inspRest.toFixed(1);
+  $('#qTimerBar').style.width = `${clamp(b.inspRest / inspSeconds() * 100, 0, 100)}%`;
+}
+function startInspiration(b){
+  b.insp = 0; b.inspRest = inspSeconds();
+  if (b.form == null) revealForm(b); // 第一次入神 → 刀形显形
+  log('insp', '入神 · 30 秒', '答错只掉价值');
+  toast('入神：30 秒内连续作答，答错也不会断刀。');
+  stopInspTimer();
+  const endAt = performance.now() + inspSeconds() * 1000;
+  S.inspTimer = setInterval(() => {
+    const left = Math.max(0, (endAt - performance.now()) / 1000);
+    b.inspRest = left;
+    showInspClock(b);
+    if (left <= 0){ stopInspTimer(); endInspiration(b); }
+  }, 80);
+  setTimeout(() => { if (S.active === b && b.state === 'hot') openQuestion(true); }, 140);
+}
+function stopInspTimer(){ if (S.inspTimer){ clearInterval(S.inspTimer); S.inspTimer = null; } }
+function endInspiration(b){
+  stopInspTimer();
+  if (b) b.inspRest = 0;
+  close('mQuiz');
+  S.curQ = null; S.answered = false;
+  toast('入神结束。');
+  render();
+}
+function resolveAnswer(b, correct){
+  if (correct){
+    b.streakOk++; b.streakBad = 0;
+    const step = S.buffs.chisel ? 2 : 3;
+    if (b.streakOk % step === 0) return { kind: 'big', forced: true };
+    let t = drawFrom(b, 'R');
+    if (inInsp(b) && t === 'hold') t = 'success';
+    return { kind: t };
+  }
+  b.streakBad++; b.streakOk = 0;
+  const limit = S.relics.includes('steady') ? 4 : 3;
+  if (b.streakBad >= limit && !inInsp(b)){
+    if (absorbBreak(b)) return { kind: 'damage', forced: true };
+    return { kind: 'break', forced: true };
+  }
+  let t = drawFrom(b, 'W');
+  if (inInsp(b) && t === 'break') t = 'damage';   // 入神：破坏临时转为损伤
+  if (t === 'break' && absorbBreak(b)) t = 'damage';
+  return { kind: t };
+}
+function applyOutcome(b, kind){
+  switch (kind){
+    case 'success': applyGain(b, false); return `×${RULES.M_SUCCESS}`;
+    case 'big': applyGain(b, true); return `×${RULES.M_BIG}`;
+    case 'damage': applyDamage(b); return `×${RULES.M_DAMAGE}`;
+    case 'break': breakBlade(b); return '剑毁';
+    case 'hold': {
+      let extra = 0;
+      if (S.relics.includes('patience')) extra += 0.05;
+      if (resonance('hold')) extra += 0.03;
+      if (extra) b.value = Math.round(b.value * (1 + extra));
+      if (S.relics.includes('silence') || resonance('hold')) b.insp++;
+      return extra ? `+${Math.round(extra * 100)}%` : '±0';
+    }
+    default: return '±0';
+  }
+}
+/* 断刀吸收：羊毛衬（每把刀 1 次）→ 布条（今日 1 次） */
+function absorbBreak(b){
+  if (S.relics.includes('wool') && !b.woolUsed){ b.woolUsed = true; log('insp','羊毛衬','断刀变损伤'); return true; }
+  if (S.buffs.bandage){ S.buffs.bandage = false; log('insp','布条','断刀被抵消'); return true; }
+  return false;
+}
+const KIND_LABEL = { success:'成功', big:'大成功', damage:'损伤', break:'断刀', hold:'维持', maintain:'维持' };
+/* 答完题先只公布对错与解析；落锤才出结果 */
+function showVerdict(correct, q, isMaintain){
+  const fb = $('#qFb');
+  fb.classList.remove('hidden');
+  fb.className = 'q-fb ' + (isMaintain ? 'keep' : correct ? 'ok' : 'bad');
+  const head = isMaintain ? '维持' : correct ? '答对' : '答错';
+  const tip = isMaintain ? '评级不变' : inInsp(S.active) ? '入神中 · 直接落锤' : '落锤看结果';
+  $('#qFbHead').innerHTML = `<b>${head}</b><span class="d">${tip}</span>`;
+  $('#qExpl').innerHTML = `<b>正确答案：${esc(q.options[q.answer])}</b><br>${esc(q.explain)}`;
+  $('#qMaintain').classList.add('hidden');
+  $('#qMaintainHint').textContent = '';
+}
+function answerQuestion(idx){
+  if (S.answered) return;
+  const b = S.active, q = S.curQ;
+  if (!b || !q) return;
+  S.answered = true;
+  S.lastAnswer = idx === q.answer;
+  document.querySelectorAll('#qOpts .q-opt').forEach((el, i) => {
+    el.disabled = true;
+    if (i === q.answer) el.classList.add('correct');
+    if (i === idx && i !== q.answer) el.classList.add('wrong');
+    if (i !== idx && i !== q.answer) el.classList.add('dim');
+  });
+  showVerdict(S.lastAnswer, q, false);
+  if (inInsp(b)){
+    setTimeout(() => { if (S.active === b && b.state === 'hot') settleStrike(true); }, 300);
+  } else {
+    const nx = $('#qNext');
+    nx.classList.remove('hidden');
+    nx.textContent = '落锤';
+    nx.onclick = () => { close('mQuiz'); setTimeout(() => settleStrike(false), 40); };
+  }
+}
+/* 真正的落锤：锤击动画 → 抽池 → 结算 */
+function settleStrike(auto){
+  const b = S.active;
+  if (!b || b.state !== 'hot' || S.busy) return;
+  S.busy = true;
+  swingOnce();
+  if (!inInsp(b)) b.insp++;   // 入神里的作答不计入下一次入神所需的锤数
+  const res = resolveAnswer(b, S.lastAnswer);
+  const delta = applyOutcome(b, res.kind);
+  b.hammers++;
+  if (b.hammers % 10 === 0) b.maintain = 1;
+  const type = res.kind === 'break' ? 'break' : res.kind === 'damage' ? 'damage' : res.kind === 'big' ? 'big' : res.kind === 'success' ? 'success' : 'hold';
+  if (b.state === 'hot'){
+    log(type, KIND_LABEL[res.kind] || '维持', `${fmtV(b.value)} · LV ${b.level}`);
+    if (res.kind === 'big') floatNum('大成功 ×3.5', '#ffd166', 560, 240);
+    if (res.kind === 'success') floatNum('成功 ×1.5', '#7dffb2', 560, 250);
+    if (res.kind === 'damage') floatNum('损伤 ×0.75', '#ff9a74', 560, 250);
+  } else {
+    log('break', '断刀', '剑身崩裂');
+  }
+  if (res.kind === 'big'){ flash(.28); shake(); }
+  if (res.kind === 'break'){ flash(.5); shake(); }
+  if (!auto && b.state === 'hot'){
+    toast(`${KIND_LABEL[res.kind]}${delta && delta !== '±0' ? ' ' + delta : ''}`, res.kind === 'damage');
+  }
+  if (b.state === 'hot' && b.insp >= inspNeed()) startInspiration(b);
+  render();
+  setTimeout(() => S.busy = false, 200);
+  if (auto && S.active === b && inInsp(b)) setTimeout(() => { if (S.active === b && inInsp(b)) openQuestion(true); }, 520);
+}
+function useMaintain(){
+  const b = S.active, q = S.curQ;
+  if (!b || !q || S.answered) return;
+  const free = inInsp(b);
+  if (!free && b.maintain <= 0){ toast(`维持次数用完了：再锻打 ${10 - (b.hammers % 10)} 次补充。`, true); return; }
+  S.answered = true;
+  if (!free) b.maintain--;
+  b.hammers++;
+  if (b.hammers % 10 === 0) b.maintain = 1;
+  document.querySelectorAll('#qOpts .q-opt').forEach((el, i) => {
+    el.disabled = true;
+    if (i === q.answer) el.classList.add('correct'); else el.classList.add('dim');
+  });
+  let holdNote = '评级不变';
+  {
+    let extra = 0;
+    if (S.relics.includes('patience')) extra += 0.05;
+    if (resonance('hold')) extra += 0.03;
+    if (extra){ b.value = Math.round(b.value * (1 + extra)); holdNote = `+${Math.round(extra*100)}% 价值`; }
+    if (S.relics.includes('silence') || resonance('hold')){ b.insp++; holdNote += ' · 充能 +1'; }
+  }
+  log('day', '维持', holdNote);
+  showVerdict(null, q, true);
+  const nx = $('#qNext');
+  nx.classList.remove('hidden');
+  nx.textContent = '继续锻打';
+  nx.onclick = () => {
+    close('mQuiz');
+    if (S.active === b && inInsp(b)) setTimeout(() => openQuestion(true), 120);
+    render();
+  };
+  render();
+}
+function closeQuiz(){
+  close('mQuiz');
+  S.curQ = null; S.answered = false;
+  render();
+}
+function strike(){ openQuestion(false); }
+function applyDamage(b){
+  if (S.relics.includes('apron') && !b.apronUsed){ b.apronUsed = true; }
+  else b.level = Math.max(1, b.level - 1);
+  b.value = Math.max(10, b.value * (resonance('damage') ? 0.85 : RULES.M_DAMAGE));
+  b.dmg++;
+  if (S.relics.includes('bloodQuench')) b.blood = true;
+  // 损伤：错误池里 1 张「损伤」当场变成「破坏」（破坏率会真的往上走）
+  ensurePools(b);
+  const i = b.poolW.indexOf('damage');
+  if (i >= 0) b.poolW[i] = 'break'; else b.poolW.push('break');
+  if (b.state === 'hot') { /* 保持在砧上 */ }
+}
+function applyGain(b, big){
+  const step = big ? 2 : 1;
+  if (b.level < RULES.LEVEL_CAP){
+    b.level = Math.min(RULES.LEVEL_CAP, b.level + step);
+    b.value *= big ? RULES.M_BIG : RULES.M_SUCCESS;
+  } else {
+    // 满级后只加价值（原作 30 级上限，被玩家吐槽过）
+    b.value *= big ? 1.5 : 1.2;
+  }
+  if (S.relics.includes('whet')) b.value *= 1.10;
+  if (S.buffs.file) b.value *= 1.08;
+  if (S.relics.includes('hammerSong') && b.streakOk >= 2) b.value *= 1.06;
+  if (S.relics.includes('scar') && b.dmg > 0) b.value *= 1 + Math.min(0.3, b.dmg * 0.06);
+  if (b.blood){ b.value *= 1.5; b.blood = false; }
+  if (big && S.relics.includes('bellows')) b.value *= 1.2;
+  if (big && resonance('crit')) b.value *= 1.5;
+}
+function putBack(){
+  const b = S.active;
+  if (!b || b.state !== 'hot') return;
+  if (S.rack.length >= 3){ toast('刀架满了（最多 3 把）。', true); return; }
+  S.rack.push(b);
+  b.state = 'racked';
+  S.blades = S.blades.filter(x => x.uid !== b.uid);
+  S.active = null; S.scene = 'idle';
+  render();
+  toast(`放上刀架：价值 ${fmtV(b.value)} · LV ${b.level} 都保留。`);
+}
+function breakBlade(b){
+  b.state = 'broken';
+  S.bladesBroken++;
+  S.active = null; S.scene = 'idle';
+  log('break','断剑','剑身崩裂');
+  flash(.55); shake();
+  render();
+  toast('剑断了。', true);
+  checkDayStall();
+}
+function spawnSparks(point){
+  const g = $('#fSparks');
+  const o = point || S.impact || anvilImpact();
+  g.setAttribute('opacity','1');
+  const colors = ['#ffd166','#ffb15c','#ffe9a8','#ff8a3a'];
+  let html = '';
+  for (let i=0;i<150;i++){
+    const a = Math.random() * Math.PI * 2;                 // 360° 四散
+    const r = 40 + Math.random()*190;                       // 范围拉大，炸得更开
+    const dur = 0.34 + Math.random()*0.34;
+    const delay = Math.random()*0.06;
+    html += `<circle class="spark" cx="${(o.x - 10 + Math.random()*26).toFixed(0)}" cy="${(o.y - 6 + Math.random()*10).toFixed(0)}" r="${(1.1+Math.random()*2.1).toFixed(1)}" fill="${colors[i % colors.length]}" style="--dx:${(Math.cos(a)*r).toFixed(0)}px;--dy:${(Math.sin(a)*r).toFixed(0)}px;animation-duration:${dur.toFixed(2)}s;animation-delay:${delay.toFixed(2)}s"/>`;
+  }
+  for (let i=0;i<44;i++){
+    const a = Math.random() * Math.PI * 2;                 // 慢速余烬也朝四周飘
+    const r = 26 + Math.random()*110;
+    html += `<circle class="spark" cx="${(o.x - 6 + Math.random()*18).toFixed(0)}" cy="${(o.y - 4 + Math.random()*8).toFixed(0)}" r="${(0.9+Math.random()*1.4).toFixed(1)}" fill="#ffb15c" opacity=".85" style="--dx:${(Math.cos(a)*r).toFixed(0)}px;--dy:${(Math.sin(a)*r).toFixed(0)}px;animation-duration:${(0.75+Math.random()*0.5).toFixed(2)}s"/>`;
+  }
+  g.innerHTML = html;
+  setTimeout(() => { g.setAttribute('opacity','0'); }, 900);
+}
+function impactRing(point){
+  const o = point || S.impact || anvilImpact();
+  const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ring.setAttribute('cx', String(o.x)); ring.setAttribute('cy', String(o.y));
+  ring.setAttribute('r','6'); ring.setAttribute('fill','none');
+  ring.setAttribute('stroke','#ffe9a8'); ring.setAttribute('stroke-width','2');
+  ring.setAttribute('opacity','.9');
+  $('#stage').appendChild(ring);
+  const t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / 340);
+    ring.setAttribute('r', String(6 + k * 34));
+    ring.setAttribute('opacity', String(0.9 * (1 - k)));
+    if (k < 1) requestAnimationFrame(step); else ring.remove();
+  };
+  requestAnimationFrame(step);
+}
+function checkDayStall(){
+  const usable = S.blades.some(x => x.state === 'blank' || x.state === 'hot' || x.state === 'heating' || x.state === 'tributing') || S.rack.length > 0;
+  if (!usable && !S.offered){
+    setTimeout(() => {
+      if (!S.offered && S.scene !== 'over') { toast('今天没有可锻的剑了，只能收工。', true); endDay(); }
+    }, 700);
+  }
+}
+
+/* ============================================================
+   ALTAR / TRIBUTE
+   ============================================================ */
+function toAltar(){
+  const b = S.active;
+  if (!b) return;
+  b.state = 'tributing';
+  S.scene = 'altar';
+  renderActions();
+  $('#actions').innerHTML = `<button class="btn gold" id="aRing">摇铃 · 上贡</button>
+    <button class="btn ghost" id="aBack">把剑拿回来</button>`;
+  $('#aRing').onclick = ringBell;
+  $('#aBack').onclick = backFromAltar;
+  render();
+}
+function backFromAltar(){
+  const b = S.active;
+  if (b && b.state === 'tributing') b.state = 'hot';
+  S.scene = 'anvil';
+  render();
+}
+/* ============================================================
+   验收：铁栅栏窗 + 奶龙的眼睛
+   ============================================================ */
+function runGate(ok, done){
+  const g = document.getElementById('gate');
+  if (!g){ if (done) done(); return; }
+  g.classList.remove('hidden','show','take','bad','clamp','shatter','hard');
+  void g.offsetWidth;
+  requestAnimationFrame(() => g.classList.add('show'));
+  const hard = !ok && S.fails >= 2;
+  setTimeout(() => {
+    if (ok){ g.classList.add('take'); return; }
+    g.classList.add('bad');
+    if (hard) g.classList.add('hard');
+    setTimeout(() => g.classList.add('shatter'), 330);   // 先变红，再碎剑
+  }, 560);
+  const endAt = hard ? 1860 : (ok ? 1400 : 1720);
+  setTimeout(() => {
+    g.classList.remove('show');
+    setTimeout(() => { g.classList.add('hidden'); g.classList.remove('take','bad','clamp','shatter','hard'); if (done) done(); }, 320);
+  }, endAt);
+}
+function ringBell(){
+  const b = S.active;
+  if (!b || S.busy) return;
+  const bell = $('#bell');
+  bell.style.transition = 'transform .12s';
+  bell.style.transform = 'rotate(9deg)';
+  setTimeout(() => { bell.style.transform = 'rotate(-7deg)'; }, 130);
+  setTimeout(() => { bell.style.transform = 'rotate(0)'; }, 260);
+
+  const ok = b.value >= S.quota;
+  let gold = Math.round(b.value);   // 金币 = 这把刀的价值
+  if (S.relics.includes('bell')) gold = Math.round(gold * 1.35);
+  if (S.relics.includes('purse')) gold = Math.round(gold * 1.2);
+  if (resonance('eco')) gold = Math.round(gold * 1.25);
+  const lostValue = b.value;
+  S.busy = true;
+
+  if (!ok) S.fails++;
+  runGate(ok, () => {
+    S.busy = false;
+    if (ok){
+      S.gold += gold;
+      S.survived++;
+      b.state = 'tribute';
+      S.active = null; S.scene = 'idle'; S.offered = true;
+      log('big', `上贡成功 · ${TIER_NAME[tierOf(b.level)]}`, `+${gold} 金币`);
+      render();
+      if (S.day >= RULES.DAYS){ win(); return; }
+      showResult('TRIBUTE ACCEPTED', '贡品通过', `奶龙收下了这把 ${fmtV(lostValue)} 的剑（今日线 ${fmtV(S.quota)}）。获得 <b>${gold}</b> 金币。`, '进入夜晚', endDay);
+      return;
+    }
+    S.patience--;
+    S.penalizedToday = true;
+    b.state = 'broken';
+    S.bladesBroken++;
+    S.active = null; S.scene = 'idle';
+    log('break','贡品不足', `奶龙耐心 −1（剩 ${S.patience}）`);
+    render();
+    if (S.patience <= 0){ lose('奶龙不再给你机会。'); return; }
+    const left = S.blades.some(x => x.state === 'blank');
+    showResult('TRIBUTE REJECTED', '贡品不足',
+      `价值 ${fmtV(lostValue)} 没够到 ${fmtV(S.quota)}，剑被奶龙咬碎。耐心还剩 <b>${S.patience}</b> 格。`
+      + (left ? '<br><br>还有剑胚——再锻一把试试，或者今天就到这里。' : '<br><br>今天的剑胚用完了。'),
+      left ? '继续锻打' : '进入夜晚',
+      left ? () => close('mResult') : endDay);
+  });
+}
+
+/* ============================================================
+   RELIC MACHINE
+   ============================================================ */
+const RELIC_REROLL_COST = 160;
+function rollRelicOffer(exclude){
+  const unheld = RELIC_IDS.filter(id => !S.relics.includes(id) && !(exclude || []).includes(id));
+  if (!unheld.length){ S.relicOffer = []; return; }
+  const have = Math.max(1, relicPool());
+  const costOf = id => (RELICS[id] && RELICS[id].cost) || 1;
+  // 第一张必定是换得起的（只要手里有剑）
+  const affordable = unheld.filter(id => costOf(id) <= have);
+  const first = affordable.length ? shuffle(affordable)[0]
+              : shuffle(unheld.filter(id => costOf(id) === Math.min(...unheld.map(costOf))))[0];
+  const rest = shuffle(unheld.filter(id => id !== first));
+  S.relicOffer = [first].concat(rest).slice(0, 2);
+}
+function renderRelicOffer(){
+  const b = S.active;
+  if (!b) return;
+  const opts = S.relicOffer.map(id => RELICS[id]);
+  $('#relicNote').innerHTML = `把剑投进机器换 1 件遗物。卡上的 <b>×N</b> 就是价码：<b>要投入 N 把剑</b>。<br>
+    <span style="color:#7d9095;font-size:9.5px">付款顺序：空白剑胚 → 刀架上的成品 → 最后才动砧上这把。你现在有 <b>${relicPool()}</b> 把可用。看不清就花 ${RELIC_REROLL_COST} 金币换一批。</span>`;
+  const pool = relicPool();
+  $('#relicGrid').innerHTML = opts.map(r => {
+    const cost = r.cost || 1;
+    const afford = pool >= cost;
+    return `<button class="pick" data-relic="${r.id}" type="button" ${afford ? '' : 'disabled'}>
+      <div class="t"><span>RELIC</span><b>×${cost} 把</b></div>
+      <h4>${r.name}</h4><small>${esc(r.desc)}</small>
+      <div class="si-owned ${afford ? '' : 'bad'}" style="margin-top:6px">${afford ? `投入 ${cost} 把剑` : `剑不够：需 ${cost} 把，你现在 ${pool} 把`}</div>
+    </button>`;
+  }).join('');
+  $('#relicGrid').querySelectorAll('[data-relic]').forEach(el => {
+    el.onclick = () => doRelic(el.dataset.relic);
+  });
+  const btn = $('#relicReroll');
+  if (btn){
+    const can = S.gold >= RELIC_REROLL_COST;
+    btn.disabled = !can;
+    btn.textContent = can ? `换一批 · ${RELIC_REROLL_COST}G` : `换一批 · 需 ${RELIC_REROLL_COST}G`;
+  }
+}
+function rerollRelic(){
+  if (!S.active) return;
+  if (S.gold < RELIC_REROLL_COST){ toast(`需要 ${RELIC_REROLL_COST} 金币才能换一批。`, true); return; }
+  S.gold -= RELIC_REROLL_COST;
+  rollRelicOffer(S.relicOffer);
+  renderRelicOffer();
+  render();
+  toast('遗物机器换了一批。');
+}
+function openRelic(){
+  const b = S.active;
+  if (!b) return;
+  if (S.relics.length >= RULES.RELIC_SLOTS){ toast(`遗物位已满（${RULES.RELIC_SLOTS} 件）。`, true); return; }
+  const pool = RELIC_IDS.filter(id => !S.relics.includes(id));
+  if (!pool.length){ toast('所有遗物都拿到了。', true); return; }
+  // 已有有效报价就沿用，避免关掉再开白嫖一次重掷
+  const offerValid = S.relicOffer && S.relicOffer.length &&
+    S.relicOffer.every(id => pool.includes(id));
+  if (!offerValid) rollRelicOffer();
+  renderRelicOffer();
+  open('mRelic');
+}
+/* 手上能拿来换遗物的成品剑：砧上这把 + 刀架上的 */
+/* 能拿来换遗物的剑：空白剑胚 + 刀架上的成品 + 砧上这把 */
+function relicPool(){
+  const blanks = S.blades.filter(x => x.state === 'blank').length;
+  return blanks + S.rack.length + (S.active && S.active.state === 'hot' ? 1 : 0);
+}
+function doRelic(id){
+  const b = S.active;
+  if (!b) return;
+  const cost = (RELICS[id] && RELICS[id].cost) || 1;
+  if (relicPool() < cost){ toast(`换「${RELICS[id].name}」需要 ${cost} 把剑，你现在只有 ${relicPool()} 把。`, true); return; }
+
+  // 付款顺序：先吃空白剑胚 → 再吃刀架成品 → 最后才动砧上这把
+  let need = cost;
+  while (need > 0){
+    const i = S.blades.findIndex(x => x.state === 'blank');
+    if (i < 0) break;
+    S.blades.splice(i, 1); need--;
+  }
+  while (need > 0 && S.rack.length){ const x = S.rack.pop(); x.state = 'relic'; need--; }
+  if (need > 0 && b.state === 'hot'){ b.state = 'relic'; S.active = null; S.scene = 'idle'; need--; }
+
+  S.relics.push(id);
+  S.relicsMade++;
+  S.relicOffer = [];          // 换过就作废，下次重新报价
+  close('mRelic');
+  log('insp', `获得遗物 · ${RELICS[id].name}`, RELICS[id].desc.slice(0,12));
+  render();
+  toast(`获得遗物「${RELICS[id].name}」。`);
+  if (!S.active) checkDayStall();
+}
+
+/* ============================================================
+   RELIC VAULT — 查看 / 撤销遗物
+   ============================================================ */
+function openVault(){
+  renderVault();
+  open('mVault');
+}
+function renderVault(){
+  const g = document.getElementById('vaultGrid');
+  if (!g) return;
+  let html = '';
+  for (let i = 0; i < RULES.RELIC_SLOTS; i++){
+    const id = S.relics[i];
+    if (id){
+      const r = RELICS[id];
+      html += `<div class="pick" style="cursor:default">
+        <div class="t"><span>SLOT ${i+1}</span><b>×${r.cost || 1} 把</b></div>
+        <h4>${r.name}</h4><small>${esc(r.desc)}</small>
+        <div style="margin-top:9px"><button class="btn ghost" data-vault="${i}"
+          style="padding:4px 10px;font-size:9px;border-color:rgba(255,90,100,.35);color:#ff9a9f">撤下（销毁）</button></div>
+      </div>`;
+    } else {
+      html += `<div class="pick" style="cursor:default;opacity:.45">
+        <div class="t"><span>SLOT ${i+1}</span><b>EMPTY</b></div>
+        <h4>空位</h4><small>用一把成品剑去祭炉，就能换一件遗物。</small>
+      </div>`;
+    }
+  }
+  g.innerHTML = html;
+  g.querySelectorAll('[data-vault]').forEach(el => {
+    el.onclick = () => removeRelic(Number(el.dataset.vault));
+  });
+}
+function removeRelic(i){
+  const id = S.relics[i];
+  if (!id) return;
+  S.relics.splice(i, 1);
+  if (id === 'keystone') S.keystoneUsed = false;
+  log('day', `撤下遗物 ${RELICS[id].name}`, '已销毁');
+  toast(`「${RELICS[id].name}」已销毁，空出一个位置。`);
+  renderVault();
+  render();
+}
+
+/* ============================================================
+   MERCHANT
+   ============================================================ */
+function openMerchant(){
+  const g = document.getElementById('merchant');
+  if (g){ g.classList.remove('out'); g.classList.remove('in'); void g.getBoundingClientRect(); g.classList.add('in'); g.setAttribute('opacity','1'); }
+  $('#mGold').textContent = S.gold;
+  $('#merchantGrid').innerHTML = S.merchantStock.map(m => {
+    const price = priceOf(m);
+    const left = m.id === 'billet' ? Math.max(0, 3 - S.billetBought) : null;
+    const sold = left === 0;
+    const can = S.gold >= price && !sold;
+    const tag = m.id === 'billet'
+      ? `<span style="color:#7dffb2">可重复 ${left}/3</span>`
+      : (m.unlimited ? '<span style="color:#7dffb2">可重复</span>' : 'SUPPLY');
+    return `<button class="pick" data-item="${m.id}" ${can?'':'disabled'}>
+      <div class="t"><span>${tag}</span><b>${price} G</b></div>
+      <h4>${m.name}</h4><small>${sold ? '本次刷新已售罄，等下次刷新' : esc(m.desc)}</small>
+    </button>`;
+  }).join('');
+  const rb = $('#merchantReroll');
+  if (rb){
+    const rc = rerollCost();
+    rb.disabled = S.gold < rc;
+    rb.textContent = `重掷货架 · ${rc}G`;
+  }
+  $('#merchantGrid').querySelectorAll('[data-item]').forEach(el => {
+    el.onclick = () => buyItem(el.dataset.item);
+  });
+  setTimeout(() => open('mMerchant'), 460);
+}
+function closeMerchant(){
+  close('mMerchant');
+  const g = document.getElementById('merchant');
+  if (!g) return;
+  g.classList.remove('in'); g.classList.add('out');
+  setTimeout(() => { g.classList.remove('out'); g.setAttribute('opacity','0'); }, 430);
+}
+/* 商品「二手打刀」：直接产出一把成品刀并放到砧上 */
+function buyKnife(){
+  let b = S.blades.find(x => x.state === 'blank');
+  if (!b){ b = newBlade(); S.blades.push(b); }
+  b.state = 'hot'; b.value = 900; b.level = 8;
+  b.poolR = null; b.poolW = null; b.insp = 0; b.inspRest = 0;
+  b.unitId = null;
+  S.active = b; S.scene = 'anvil';
+  render();
+  setTimeout(() => pickUnitFor(b, 'ready'), 260);   // 买完立刻问「用哪个单元的题」
+  return b;
+}
+function buyItem(id){
+  const m = S.merchantStock.find(x => x.id === id);
+  if (!m) return;
+  const price = priceOf(m);
+  if (S.gold < price) return;
+  if (id === 'billet' && S.billetBought >= 3){ toast('备用剑胚每次刷新只卖 3 个。', true); return; }
+  S.gold -= price;
+  if (m.instant){
+    if (id === 'ember') S.gold += 220 * merchantMul();
+    if (id === 'order') S.quota = Math.max(20, Math.round(S.quota * 0.85));
+    if (id === 'knife') buyKnife();
+    if (id === 'billet'){ const nb = newBlade(); nb.value = 30; S.blades.push(nb); S.billetBought++; }
+  } else {
+    S.inv.push(id);        // 入袋，回主界面按「使用」
+  }
+  if (!m.unlimited) S.merchantStock = S.merchantStock.filter(x => x.id !== id);
+  log('day', `买入 ${m.name}`, `−${price}G`);
+  render();
+  if (id === 'knife') closeMerchant();
+  else openMerchant();
+  toast(m.instant ? `买下「${m.name}」。` : `「${m.name}」放进道具袋——关掉商店后点「使用」。`);
+}
+
+/* ============================================================
+   DAY END / WIN / LOSE
+   ============================================================ */
+function endDay(){
+  if (S.heating) { S.heating = false; cancelAnimationFrame(S.heatRAF); }
+  if (!S.offered && !S.penalizedToday && S.patience > 0 && !S.won){
+    S.patience--;
+    S.penalizedToday = true;
+    log('break','空手收工', `奶龙耐心 −1（剩 ${S.patience}）`);
+    if (S.patience <= 0){ lose('你连一把剑都没交上去。'); return; }
+  }
+  S.day++;
+  if (S.day > RULES.DAYS){ win(); return; }
+  startDay(false);
+  toast(`第 ${S.day} 天。贡品线 ${fmtV(S.quota)}。`);
+}
+function win(){
+  S.won = true; S.scene = 'over';
+  log('big','第 30 天','获得自由');
+  render();
+  showResult('FREEDOM // 30 DAYS', '你自由了',
+    `第 30 天，你交出的贡品压过了奶龙的账本。它打开笼门。<br><br>
+     完成天数 <b>${S.survived}</b> · 最高价值 <b>${fmtV(S.bestValue)}</b> · 遗物 <b>${S.relics.length}</b> 件 · 碎剑 <b>${S.bladesBroken}</b> 把 · 金币 <b>${S.gold}</b>`,
+    '再来一局', () => { close('mResult'); reset(); });
+}
+function lose(reason){
+  S.scene = 'over';
+  log('break','失败', reason);
+  render();
+  showResult('THE DRAGON CLOSES THE CAGE', '结束了',
+    `${reason}<br><br>坚持到第 <b>${S.day}</b> 天 · 最高价值 <b>${fmtV(S.bestValue)}</b> · 遗物 <b>${S.relics.length}</b> 件`,
+    '再来一局', () => { close('mResult'); reset(); });
+}
+function showResult(eyebrow, title, text, btn, fn){
+  $('#rEyebrow').textContent = eyebrow;
+  $('#rTitle').textContent = title;
+  $('#rText').innerHTML = text;
+  $('#rBtn').textContent = btn;
+  S.resultAction = fn;
+  $('#rBtn').onclick = dismissResult;
+  open('mResult');
+}
+/* ×、Esc、主按钮走同一条出口：先关窗，再执行挂起的下一步——
+   否则关掉弹窗后剑已交出去、天却没过去，玩家会卡在"日内无剑可锻"。 */
+function dismissResult(){
+  const fn = S.resultAction;
+  S.resultAction = null;
+  close('mResult');
+  if (typeof fn === 'function') fn();
+}
+
+/* ============================================================
+   MODAL PLUMBING
+   ============================================================ */
+function open(id){ document.getElementById(id).classList.remove('hidden'); }
+function close(id){ document.getElementById(id).classList.add('hidden'); }
+function closeAll(){ ['mHelp','mMerchant','mRelic','mResult','mVault','mQuiz','mUnit'].forEach(close); }
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+$('#btnHelp').onclick = () => open('mHelp');
+$('#helpClose').onclick = () => close('mHelp');
+$('#btnRestart').onclick = () => { if (confirm('重开一局？当前进度会丢失。')) { closeAll(); reset(); } };
+$('#merchantClose').onclick = closeMerchant;
+$('#merchantX').onclick = closeMerchant;
+$('#relicX').onclick = () => close('mRelic');
+$('#relicReroll').onclick = rerollRelic;
+$('#vaultBtn').onclick = openVault;
+$('#vaultX').onclick = () => close('mVault');
+$('#vaultClose').onclick = () => close('mVault');
+$('#merchantReroll').onclick = rerollMerchant;
+$('#helpX').onclick = () => close('mHelp');
+$('#rClose').onclick = dismissResult;
+$('#relicCancel').onclick = () => close('mRelic');
+$('#qOpts').addEventListener('click', e => {
+  const btn = e.target.closest('[data-opt]');
+  if (btn && !btn.disabled) answerQuestion(Number(btn.dataset.opt));
+});
+$('#qMaintain').onclick = useMaintain;
+$('#unitX').onclick = () => { S.pendingBillet = null; close('mUnit'); };
+document.getElementById('invBar').addEventListener('click', e => {
+  const btn = e.target.closest('[data-use]');
+  if (btn) useInv(btn.dataset.use);
+});
+document.getElementById('stage').addEventListener('click', e => {
+  const slot = e.target.closest('[data-rackslot]');
+  if (slot) { takeFromRack(Number(slot.dataset.rackslot)); return; }
+  if (e.target.closest('#relicMachine')) openVault();   // 点遗物机 = 打开遗物台
+});
+document.getElementById('rack').addEventListener('click', e => {
+  const bil = e.target.closest('[data-billet]');
+  if (bil && S.scene === 'idle'){
+    const b = S.blades.find(x => x.uid === Number(bil.dataset.billet));
+    if (b) pickUnitFor(b);
+    return;
+  }
+  const fo = e.target.closest('[data-focus]');
+  if (fo){
+    const b = S.blades.find(x => x.uid === Number(fo.dataset.focus));
+    if (b && (b.state === 'hot' || b.state === 'forged')){ S.active = b; S.scene = 'anvil'; render(); }
+  }
+});
+function takeBilletWith(b){
+  b.state = 'heating';
+  S.active = b;
+  b.poolR = null; b.poolW = null;
+  S.scene = 'heat';
+  render();
+  beginHeat();
+}
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'escape'){
+    if (!document.getElementById('mResult').classList.contains('hidden')) { dismissResult(); return; }
+    closeAll(); return;
+  }
+  if (!document.getElementById('mQuiz').classList.contains('hidden')){
+    if (['1','2','3','4'].includes(k)){ answerQuestion(Number(k) - 1); e.preventDefault(); return; }
+    if (['a','b','c','d'].includes(k)){ answerQuestion('abcd'.indexOf(k)); e.preventDefault(); return; }
+    if (k === 'm'){ useMaintain(); e.preventDefault(); return; }
+  }
+  if (S.scene === 'anvil' && k === ' ') { e.preventDefault(); strike(); }
+  if (S.scene === 'heat' && k === ' ') { e.preventDefault(); pullFromFurnace(); }
+  if (S.scene === 'altar' && k === ' ') { e.preventDefault(); ringBell(); }
+});
+
+/* ---------- ambient embers ---------- */
+(function embers(){
+  const g = document.getElementById('embers');
+  if (!g) return;
+  let html = '';
+  for (let i=0;i<18;i++){
+    const x = 40 + Math.random()*1120;
+    const y = 380 + Math.random()*140;
+    const r = .8 + Math.random()*1.6;
+    const dur = 5 + Math.random()*6;
+    const delay = -Math.random()*10;
+    html += `<circle class="ember" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" style="animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s"/>`;
+  }
+  g.innerHTML = html;
+})();
+
+/* ============================================================
+   INIT
+   ============================================================ */
+S.quota = quotaFor(1);
+reset();
+window.__FT = { S, RULES, RELICS, MERCHANT, CHEM, CHEM_BY_ID, render, strike, openQuestion, answerQuestion, useMaintain, closeQuiz, pickUnitFor, chooseUnit, resolveAnswer, poolRightCounts, poolWrongCounts, ensurePools, pullFromFurnace, ringBell, endDay, reset, takeBillet, doRelic, buyItem, putBack, takeFromRack, layoutHammer, anvilImpact, spawnSparks, rollMerchant, openVault, renderVault, removeRelic, priceOf, merchantMul, FORMS, bladePath, formOf, swordMarkup, settleStrike, openMerchant, openRelic, open, close, startDay, showResult, win, lose, riskOf, buildPool, quotaFor, drawFrom, applyGain, applyDamage, SCHOOLS, resonance, schoolCount, activeSchools, inspNeed, applyOutcome, relicPool, rollRelicOffer, renderRelicOffer, runGate, useInv, invGroups, renderInv, inspSeconds };
+</script>
+</body>
+</html>

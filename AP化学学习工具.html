@@ -159,6 +159,17 @@ select{
 .anim-detail{font-size:12.5px;color:var(--muted);line-height:1.78;margin-top:10px;padding:10px 13px;border:1px dashed var(--line);border-radius:8px;background:var(--bg)}
 .anim-detail b{color:var(--ink)}
 .anim-detail .hl{color:var(--phy);font-weight:600}
+/* ===== U3 IMF 形成机理 ===== */
+.imf-mech{display:grid;gap:12px;margin-top:12px}
+.imf-mech article{border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;background:var(--bg)}
+.imf-mech h4{margin:0 0 2px;font-size:14.5px;color:var(--ink)}
+.imf-mech h4 span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--phy);margin-left:8px;vertical-align:middle}
+.imf-mech .sub{font-size:11.5px;color:var(--muted);margin:0 0 8px}
+.imf-steps{margin:0;padding-left:18px;font-size:12.5px;line-height:1.85;color:var(--muted)}
+.imf-steps li{margin:4px 0}
+.imf-steps b{color:var(--ink)}
+.imf-mech .hint{margin-top:9px;background:var(--card)}
+@media (max-width:699px){.imf-mech article{padding:12px 13px}.imf-steps{font-size:12px;line-height:1.8}}
 .anim-detail ul{margin:6px 0 0;padding-left:18px}
 .anim-detail li{margin:2px 0}
 .lewis-gal{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
@@ -4687,6 +4698,48 @@ html[data-theme="dark"] .geo-studio::before {
 .geo-modal .geo-studio .masthead{padding-right:112px}
 @media (max-width:720px){.geo-studio .geo-close{top:12px;right:14px;height:34px;padding:0 12px}.geo-modal .geo-studio .masthead{padding-right:100px}}
 /* ===== AP_GEO_INTEGRATION:END (styles) ===== */
+
+/* ===== AP_FISH_GAME:BEGIN : styles ===== */
+/* 练习页右下角的「小游戏」入口 */
+.fish-fab{position:fixed;right:24px;bottom:24px;z-index:45;display:none;align-items:center;gap:9px;height:52px;padding:0 20px 0 16px;border:0;border-radius:26px;background:var(--md-sys-color-primary,#2b6de9);color:var(--md-sys-color-on-primary,#fff);font:600 14px/1 var(--sans,system-ui);letter-spacing:.02em;cursor:pointer;box-shadow:0 10px 26px rgba(12,32,58,.30),0 2px 6px rgba(12,32,58,.18);transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .18s ease,filter .18s ease}
+.fish-fab[data-show="1"]{display:inline-flex}
+.fish-fab:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(12,32,58,.36),0 3px 8px rgba(12,32,58,.2);filter:brightness(1.05)}
+.fish-fab:active{transform:translateY(0) scale(.98)}
+.fish-fab svg{width:23px;height:23px;flex:0 0 23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.fish-fab:focus-visible{outline:2px solid var(--md-sys-color-on-primary,#fff);outline-offset:3px}
+@media (max-width:699px){.fish-fab{right:14px;bottom:calc(78px + env(safe-area-inset-bottom));height:46px;padding:0 16px 0 13px;font-size:13px;gap:7px}.fish-fab svg{width:20px;height:20px;flex-basis:20px}}
+
+/* 全屏小游戏：顶部一条极窄的控制栏，避免遮挡游戏自身的 HUD */
+.fish-modal{padding:0;background:#04121a;align-items:stretch;justify-content:stretch}
+.fish-shell{display:flex;flex-direction:column;width:100%;height:100%;min-height:0}
+.fish-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;height:46px;padding:0 12px 0 16px;background:#061820;border-bottom:1px solid rgba(122,206,226,.14);color:#bfe4ec}
+.fish-bar-title{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 var(--sans,system-ui);letter-spacing:.1em;text-transform:uppercase;color:#8fc6d4}
+.fish-bar-title svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.fish-exit{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:9px;border:1px solid rgba(140,214,232,.26);background:rgba(10,34,44,.9);color:#d4eef4;font:600 12px/1 var(--sans,system-ui);cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.fish-exit:hover{background:rgba(22,62,76,.95);border-color:rgba(160,230,246,.46);color:#fff}
+.fish-exit span{font:600 9px/1 var(--mono,monospace);padding:2px 4px;border-radius:4px;border:1px solid rgba(140,214,232,.24);color:#8fb6c2}
+.fish-body{position:relative;flex:1;min-height:0;background:#04121a}
+.fish-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#04121a}
+.fish-bar-actions{display:flex;align-items:center;gap:8px}
+.fish-exit.fish-ghost{background:transparent;border-color:rgba(140,214,232,.18);color:#9fc4ce}
+.fish-exit.fish-ghost:hover{background:rgba(22,62,76,.6);border-color:rgba(160,230,246,.42);color:#dff3f8}
+.fish-bar-title b{font-weight:600;letter-spacing:.08em}
+.fish-picker{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:26px;padding:32px;flex-wrap:wrap;overflow:auto;background:radial-gradient(circle at 50% 0%,rgba(90,190,205,.10),transparent 62%),#04121a}
+.fish-pick{display:flex;flex-direction:column;gap:10px;width:min(340px,42vw);padding:26px 24px;border-radius:20px;border:1px solid rgba(130,200,210,.18);background:linear-gradient(160deg,rgba(10,32,44,.96),rgba(4,14,20,.98));color:#cfe8ee;text-align:left;cursor:pointer;transition:transform .18s cubic-bezier(.2,.7,.2,1),border-color .18s ease,box-shadow .18s ease}
+.fish-pick:hover{transform:translateY(-4px);border-color:rgba(150,225,240,.5);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.fish-pick:active{transform:translateY(-1px)}
+.fish-pick:focus-visible{outline:2px solid #8fe6f5;outline-offset:3px}
+.fish-pick-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;border:1px solid rgba(150,225,240,.35);color:#a8e8f5;font:700 20px/1 var(--sans,system-ui);background:rgba(120,220,240,.08)}
+.fish-pick b{font:600 17px/1.35 var(--sans,system-ui);color:#e6fbff}
+.fish-pick small{font:400 12.5px/1.7 var(--sans,system-ui);color:#7fa6b1}
+.fish-frame[hidden],.fish-picker[hidden],.fish-exit[hidden]{display:none !important}
+/* 从小游戏里打开的公式表/周期表需要盖在游戏弹窗之上 */
+#modalFormula.modal-above{z-index:1200}
+.fish-bar-title{min-width:0;overflow:hidden}
+.fish-bar-title b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:699px){.fish-bar-actions{gap:6px}.fish-bar-actions .fish-exit{padding:0 9px;font-size:11px}.fish-bar-actions .fish-exit span{display:none}}
+@media (max-width:699px){.fish-picker{gap:14px;padding:18px}.fish-pick{width:100%;padding:20px 18px}.fish-pick b{font-size:15.5px}}
+/* ===== AP_FISH_GAME:END (styles) ===== */
 </style>
 <noscript><style>
 /* ================= 无 JavaScript 兜底 v2 =================
@@ -5391,6 +5444,56 @@ try{var _wm=localStorage.getItem("apchem.wmSize");if(_wm){document.documentEleme
             ⑤ 氢键（H 连在 N / O / F 上时，三者中最强）
           </div>
           <div class="hint"><b>极性与强度：</b>极性分子之间的作用力 = 偶极–偶极 <b>加上</b> 色散力，所以同尺寸下总比非极性分子之间强。</div>
+        </div>
+        <div class="card">
+          <h3>三种作用力的形成机理<span class="badge warn" style="margin-left:8px">逐步拆解</span></h3>
+          <p class="lead">把“为什么会被吸住”拆成一条因果链：先出现什么 → 怎么传给邻居 → 为什么强弱、方向性各不相同。</p>
+          <div class="imf-mech">
+            <article>
+              <h4>① 伦敦色散力<span>INSTANTANEOUS → INDUCED</span></h4>
+              <p class="sub">所有分子与原子都有；非极性物质唯一的 IMF。</p>
+              <ol class="imf-steps">
+                <li><b>先有瞬时偶极：</b>电子在核外不停运动，某一瞬间电子云偏向一侧，正负电荷中心不再重合，产生寿命约 10⁻¹⁵ s 的瞬时偶极（δ⁺ / δ⁻）。</li>
+                <li><b>再诱导邻居：</b>这个瞬时偶极的电场把相邻分子的电子云也拉偏，产生<b>方向一致</b>的诱导偶极。</li>
+                <li><b>同相起伏才吸引：</b>两个偶极同相振荡时相互吸引、反相时排斥，时间平均下来是净吸引。</li>
+                <li><b>强弱由极化率决定：</b>E ∝ −α₁α₂ / r⁶（α 为极化率），只在 1 nm 内显著；电子越多、分子越大越容易被极化 → 色散力越强。</li>
+              </ol>
+              <div class="hint">这解释了 Ar &lt; Kr &lt; Xe、F₂ &lt; Cl₂ &lt; Br₂ &lt; I₂ 的沸点依次升高——它们都只有色散力。</div>
+            </article>
+            <article>
+              <h4>② 偶极–偶极作用力<span>PERMANENT DIPOLE</span></h4>
+              <p class="sub">极性分子之间；实际作用力总是它与色散力叠加。</p>
+              <ol class="imf-steps">
+                <li><b>偶极从哪来：</b>成键原子电负性不同 → 键偶极；分子几何对称（CO₂、CCl₄）时相互抵消，不对称（H₂O、HCl、NH₃）则留下<b>净偶极矩 μ</b>。</li>
+                <li><b>取向排列：</b>分子在热运动中不停转动，当 δ⁺ 端朝向对方的 δ⁻ 端时势能最低 → 静电吸引。</li>
+                <li><b>怕热：</b>升温打乱取向，平均吸引变弱：E ∝ −μ₁²μ₂² / (k_B T r⁶)。<b>色散力几乎不随温度变化</b>，这是两者最关键的差别。</li>
+                <li><b>强弱：</b>典型 0.5–2 kJ/mol，与色散力同数量级；分子越大色散力占比越高，甚至会反超（HI 沸点高于 HCl）。</li>
+              </ol>
+            </article>
+            <article>
+              <h4>③ 氢键<span>H–N/O/F ⋯ 孤对</span></h4>
+              <p class="sub">需要“给体 H”与“受体孤对”同时具备。</p>
+              <ol class="imf-steps">
+                <li><b>前提：</b>H 直接连在 N、O、F 上（电负性大、半径小）；另一分子上有 N/O/F 的孤对电子。</li>
+                <li><b>H 近乎“裸露”：</b>N/O/F 把共用电子强烈拉向自己，H 一侧正电荷高度集中，与邻近孤对产生很强的静电吸引。</li>
+                <li><b>方向性与饱和性：</b>H 沿孤对电子的伸展方向接近（越接近 180° 越强），一个 H 只对一个孤对 → 有方向、有饱和，这正是它明显强于普通偶极–偶极的原因。</li>
+                <li><b>带一点共价性：</b>H⋯O 之间有少量电子云共享，红外 O–H 伸缩振动因此明显红移、变宽，可作为实验证据。</li>
+                <li><b>强弱：</b>约 5–40 kJ/mol，是偶极–偶极的 5–10 倍，但仍只有共价键（约 400 kJ/mol）的十分之一。</li>
+                <li><b>后果：</b>H₂O 每个分子 2 个给体 + 2 个受体 → 三维网络 → 沸点 100 °C、冰的密度比水小；HF 只能连成锯齿链；NH₃ 只有 1 对孤对 → 氢键较弱，沸点低于 H₂O。</li>
+              </ol>
+            </article>
+          </div>
+          <div class="fig" style="margin-top:14px">
+            <table class="dtable">
+              <tr><th>对比项</th><th>伦敦色散力</th><th>偶极–偶极</th><th>氢键</th></tr>
+              <tr><td>存在前提</td><td>所有分子 / 原子</td><td>有永久偶极 μ</td><td>H–N/O/F + 孤对</td></tr>
+              <tr><td>本质</td><td>瞬时偶极 ↔ 诱导偶极</td><td>永久偶极取向排列</td><td>强静电 + 少量共价</td></tr>
+              <tr><td>距离 / 温度</td><td>∝ 1/r⁶，几乎不随温度变</td><td>∝ 1/(T·r⁶)，升温减弱</td><td>近程、强方向性，升温可断</td></tr>
+              <tr><td>典型能量</td><td>0.05–40 kJ/mol</td><td>0.5–2 kJ/mol</td><td>5–40 kJ/mol</td></tr>
+              <tr><td>代表物质</td><td>Ar、CH₄、I₂</td><td>HCl、丙酮</td><td>H₂O、HF、NH₃、羧酸二聚体</td></tr>
+            </table>
+          </div>
+          <div class="hint"><b>判断顺序：</b>先看有没有永久偶极 → 再看有没有 H–N/O/F → 两样都没有，就只剩色散力。</div>
         </div>
         <div class="card">
           <h3>元素与化合物的实例</h3>
@@ -11755,6 +11858,171 @@ try{var _wm=localStorage.getItem("apchem.wmSize");if(_wm){document.documentEleme
 </script>
 <!-- AP_GEO_INTEGRATION:END -->
 
+<!-- AP_FISH_GAME:BEGIN -->
+<!-- ============ 化学小游戏（大肥鱼·化学版，作为练习页的小游戏入口） ============ -->
+<button class="fish-fab" id="fishFab" type="button" data-show="0" aria-label="打开化学小游戏">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c3.2-4 7.6-5.2 11.4-2.9L19.5 6v12l-5.1-3.1C10.6 17.2 6.2 16 3 12Z"/><path d="M8 11.3h.01"/></svg>
+  <span>小游戏</span>
+</button>
+<div class="modal hide fish-modal" id="fishModal" role="dialog" aria-modal="true" aria-label="化学小游戏">
+  <div class="fish-shell">
+    <div class="fish-bar">
+      <span class="fish-bar-title">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c3.2-4 7.6-5.2 11.4-2.9L19.5 6v12l-5.1-3.1C10.6 17.2 6.2 16 3 12Z"/></svg>
+        <b id="fishBarName">小游戏 · 选择</b>
+      </span>
+      <div class="fish-bar-actions">
+        <button class="fish-exit fish-ghost" id="fishFormula" type="button" title="AP 化学公式速查">公式</button>
+        <button class="fish-exit fish-ghost" id="fishPtable" type="button" title="元素周期表">周期表</button>
+        <button class="fish-exit fish-ghost" id="fishSwitch" type="button" hidden>切换游戏</button>
+        <button class="fish-exit" type="button" data-close>退出 <span>ESC</span></button>
+      </div>
+    </div>
+    <div class="fish-body">
+      <div class="fish-picker" id="fishPicker">
+        <button class="fish-pick" type="button" data-game="fish-game.html">
+          <span class="fish-pick-mark">◈</span>
+          <b>深海刷题 · 大肥鱼</b>
+          <small>躲鱼雷、避渔网，答对化学题换取纯度，达标后一键交付。</small>
+        </button>
+        <button class="fish-pick" type="button" data-game="blade-game.html">
+          <span class="fish-pick-mark">龍</span>
+          <b>锻刀纳贡 · ForgeTax 2D</b>
+          <small>控温、锻打、淬火，按期锻出合格的刀剑完成纳贡。</small>
+        </button>
+      </div>
+      <iframe class="fish-frame" id="fishFrame" data-game="fish-game.html" title="化学小游戏：深海刷题" allow="autoplay" hidden></iframe>
+      <iframe class="fish-frame" id="bladeFrame" data-game="blade-game.html" title="化学小游戏：锻刀纳贡" allow="autoplay" hidden></iframe>
+    </div>
+  </div>
+</div>
+<script>
+/* 练习页「小游戏」入口：按路由显示按钮、首次打开时才加载 iframe。 */
+(function () {
+  'use strict';
+  var fab = document.getElementById('fishFab');
+  var modal = document.getElementById('fishModal');
+  var picker = document.getElementById('fishPicker');
+  var barName = document.getElementById('fishBarName');
+  var switchBtn = document.getElementById('fishSwitch');
+  var frames = Array.prototype.slice.call(modal.querySelectorAll('.fish-frame'));
+  if (!fab || !modal || !picker || !frames.length) return;
+
+  var GAME_NAMES = {
+    'fish-game.html': '深海刷题 · 大肥鱼',
+    'blade-game.html': '锻刀纳贡 · ForgeTax 2D'
+  };
+
+  function gameUrl(file) {
+    // 单文件版从 ap-chem-site/assets/material-app.js 加载，站点版从 assets/material-app.js 加载，
+    // 以该脚本的位置推导同目录下的游戏文件，两种形态都能命中。
+    var s = document.querySelector('script[src$="material-app.js"]');
+    var base = 'ap-chem-site/assets/' + file;
+    try { if (s) base = new URL(file, s.src).href; } catch (e) { /* keep fallback */ }
+    return base + (base.indexOf('?') < 0 ? '?' : '&') + 'v=20261025';
+  }
+  function frameOf(file) {
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].getAttribute('data-game') === file) return frames[i];
+    }
+    return null;
+  }
+  function openFormulaPane(key) {
+    var m = document.getElementById('modalFormula');
+    if (!m) return;
+    m.classList.add('modal-above');
+    m.classList.remove('hide');
+    var tabs = document.getElementById('ftTabs');
+    var btn = tabs ? tabs.querySelector('[data-ft="' + key + '"]') : null;
+    if (btn) btn.click();     // 复用原有切换逻辑（含周期表的懒构建）
+  }
+  function showPicker() {
+    picker.hidden = false;
+    for (var i = 0; i < frames.length; i++) frames[i].hidden = true;
+    if (switchBtn) switchBtn.hidden = true;
+    if (barName) barName.textContent = '小游戏 · 选择';
+  }
+  function play(file) {
+    var f = frameOf(file);
+    if (!f) return;
+    if (!f.getAttribute('src')) f.src = gameUrl(file);
+    picker.hidden = true;
+    for (var i = 0; i < frames.length; i++) frames[i].hidden = (frames[i] !== f);
+    if (switchBtn) switchBtn.hidden = false;
+    if (barName) barName.textContent = GAME_NAMES[file] || '小游戏';
+  }
+  function syncFab() {
+    var show = location.hash.indexOf('#/practice') === 0;
+    fab.setAttribute('data-show', show ? '1' : '0');
+  }
+  function open() {
+    showPicker();
+    Array.prototype.forEach.call(document.querySelectorAll('.modal'), function (m) {
+      if (m !== modal) m.classList.add('hide');
+    });
+    modal.classList.remove('hide');
+  }
+  function close() { modal.classList.add('hide'); }
+
+  fab.addEventListener('click', open);
+  if (switchBtn) switchBtn.addEventListener('click', showPicker);
+  var fBtn = document.getElementById('fishFormula');
+  var pBtn = document.getElementById('fishPtable');
+  if (fBtn) fBtn.addEventListener('click', function () { openFormulaPane('formula'); });
+  if (pBtn) pBtn.addEventListener('click', function () { openFormulaPane('ptable'); });
+  Array.prototype.forEach.call(picker.querySelectorAll('[data-game]'), function (b) {
+    b.addEventListener('click', function () { play(b.getAttribute('data-game')); });
+  });
+  Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'), function (b) {
+    b.addEventListener('click', close);
+  });
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  /* 公式表/周期表盖在小游戏之上时，Esc 只关它；
+     主应用还有全局 Esc → closeModal()，不阻断会把游戏一起关掉 */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var fm = document.getElementById('modalFormula');
+    if (fm && !fm.classList.contains('hide') && !modal.classList.contains('hide')) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      fm.classList.add('hide');
+    }
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hide')) close();
+  });
+  // 本地 file:// 打开时 iframe 与主页面跨源，改用 postMessage 把题库推给游戏
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d) return;
+    if (d.type === 'AP_FISH_IMG_REQUEST' && d.id && e.source) {
+      var pool = (window.__q && window.__q.pool) || [];
+      for (var k = 0; k < pool.length; k++) {
+        var item = pool[k];
+        if (!item || item.id !== d.id) continue;
+        try { e.source.postMessage({ type: 'AP_FISH_IMG_DATA', id: d.id, src: item.img || '', alt: item.imgAlt || '', role: item.imgRole || '' }, '*'); } catch (err) { /* noop */ }
+        break;
+      }
+      return;
+    }
+    if (d.type !== 'AP_FISH_BANK_REQUEST') return;
+    var q = window.__q;
+    if (!q || !Array.isArray(q.pool) || !e.source) return;
+    var list = [];
+    for (var i = 0; i < q.pool.length; i++) {
+      var it = q.pool[i];
+      if (!it || typeof it !== 'object') continue;
+      if (it.type === 'frq') continue;
+      list.push({ id: it.id, r: it.r, q: it.q, opts: it.opts, ans: it.ans, why: it.why, cn: it.cn, kp: it.kp,
+        hasImg: !!it.img, imgAlt: it.imgAlt || '', imgRole: it.imgRole || '' });
+    }
+    try { e.source.postMessage({ type: 'AP_FISH_BANK_DATA', pool: list }, '*'); } catch (err) { /* noop */ }
+  });
+  window.addEventListener('hashchange', syncFab);
+  syncFab();
+})();
+</script>
+<!-- AP_FISH_GAME:END -->
 <script>
 (function(){
 "use strict";

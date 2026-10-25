@@ -1,3 +1,22 @@
+/* 修正题库数组的稀疏空洞：让 length 与实际题数一致（819 → 805）。
+   app.js 中 QPOOL 有若干空槽（被移除/占位的题目留下的裸逗号），
+   导致 Array.length 大于真实题目数。此处原地压紧，所有引用同一数组
+   的模块（练习题库、错题本、小游戏）都会同步得到正确的 length。 */
+(function(){
+  try {
+    var q = window.__q;
+    if (!q || !Array.isArray(q.pool)) return;
+    var pool = q.pool, hasHole = false, i;
+    for (i = 0; i < pool.length; i++) { if (!(i in pool)) { hasHole = true; break; } }
+    if (!hasHole) return;
+    var clean = [];
+    for (i = 0; i < pool.length; i++) { if (i in pool) clean.push(pool[i]); }
+    pool.length = 0;
+    for (i = 0; i < clean.length; i++) pool.push(clean[i]);
+    console.log('[题库] 已压紧稀疏空洞：' + (clean.length) + ' 道题');
+  } catch (e) { /* noop */ }
+})();
+
 (() => {
   'use strict';
   const assets = new URL('.', document.currentScript.src);
@@ -877,11 +896,48 @@
   function loadBook() {
     if (window.AP_BOOK_DATA) return Promise.resolve(window.AP_BOOK_DATA);
     if (!bookLoad) bookLoad=new Promise(resolve=>{const s=document.createElement('script');s.src=new URL('book-local/data.js',assets);
-      s.onload=()=>resolve(window.AP_BOOK_DATA || null);s.onerror=()=>resolve(null);document.head.append(s);});
+      s.onload=()=>resolve(window.AP_BOOK_DATA || null);s.onerror=()=>resolve(null);document.head.append(s);})
+      .then(data=>data||builtinBook());
     return bookLoad;
   }
+  /* 本地书本题库（book-local/）未随仓库分发时，「书本题库」回落到内置题库，
+     这样练习入口始终有题可做；两者的作答都走同一套判分与统计。 */
+  const UNIT_TITLES={u1:'Unit 1 · 原子结构与性质',u2:'Unit 2 · 分子与离子化合物结构与性质',u3:'Unit 3 · 分子间作用力与性质',u4:'Unit 4 · 化学反应',u5:'Unit 5 · 化学动力学',u6:'Unit 6 · 热力学',u7:'Unit 7 · 化学平衡',u8:'Unit 8 · 酸和碱',u9:'Unit 9 · 热力学应用与电化学'};
+  function htmlEscape(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function builtinBook(){
+    const Q=window.__q;
+    if(!Q||!Array.isArray(Q.pool)||!Q.pool.length) return null;
+    const groups=new Map();
+    Q.pool.forEach(item=>{
+      const unit=String(item.r||'').split('.')[0].toLowerCase();
+      if(!UNIT_TITLES[unit]) return;
+      let g=groups.get(unit);
+      if(!g){g={id:'unit-'+unit,kind:'unit',title:UNIT_TITLES[unit],sheets:{mcq:'',frq:''},questions:[]};groups.set(unit,g);}
+      const isFrq=item.type==='frq';
+      const stem=[`<p>${htmlEscape(item.q)}</p>`];
+      let answer=null, options=[];
+      if(isFrq){
+        (item.parts||[]).forEach((p,i)=>{stem.push(`<p><b>${htmlEscape(p.p||('Part '+(i+1)))}</b> ${htmlEscape(p.ask||'')}</p>`);});
+      }else{
+        options=(item.opts||[]).map(o=>`<p>${htmlEscape(o)}</p>`);
+        answer=Number.isInteger(item.ans)?item.ans:null;
+      }
+      const explanation=[item.why?`<p>${item.why}</p>`:'',item.cn?`<p>${item.cn}</p>`:''].join('');
+      g.questions.push({id:item.id,type:isFrq?'frq':'mcq',number:g.questions.length+1,stem:stem.join(''),
+        options,answer,explanation,group:g,srcNote:item.src||''});
+    });
+    const list=[...groups.values()].filter(g=>g.questions.length);
+    if(!list.length) return null;
+    list.forEach(g=>{
+      const note=`<p>题库来源：内置题库（${g.questions.length} 题）。</p>`;
+      g.sheets.mcq=g.questions.some(q=>q.type==='mcq')?note:'';
+      g.sheets.frq=g.questions.some(q=>q.type==='frq')?note:'';
+    });
+    bookFallback=true;
+    return {groups:list,fallback:true,total:list.reduce((a,g)=>a+g.questions.length,0)};
+  }
   let currentBookRequestId=0;
-  let bookData, groupId='all', questionType='all', search='', wrongOnly=false, questionIndex=0;
+  let bookData, groupId='all', questionType='all', search='', wrongOnly=false, questionIndex=0, bookFallback=false;
   let history=read('apchem.bookHistory.v1',{});
   if (!history || typeof history !== 'object' || Array.isArray(history)) history={};
   let selected=null, revealed=false, written='';
@@ -908,7 +964,11 @@
     });
     div.append(...parsed.body.childNodes);return div;
   }
-  function record(q, correct, choice=null) { history[q.id]={correct,choice,at:Date.now()};save('apchem.bookHistory.v1',history); }
+  function record(q, correct, choice=null) {
+    history[q.id]={correct,choice,at:Date.now()};save('apchem.bookHistory.v1',history);
+    /* 书本练习的作答同样计入学习统计（与题库练习同一口径） */
+    if (window.__answerStats) { try { window.__answerStats(correct); } catch(e){} }
+  }
   function renderBookShell() {
     hideAllPopups();
     book.replaceChildren();
@@ -928,7 +988,9 @@
     if (!bookData) {
       body.append(el('p','study-source',t('Book practice is currently unavailable.','书本题库暂不可用。')));return;
     }
-    body.append(el('p','study-source',t('Original English questions and explanations. Image-only options are preserved for manual review.','保留原书英文题目与解析；图片形式选项保留原样，供手动核对。')));
+    body.append(el('p','study-source', bookFallback
+      ? t('Local book data was not found, so the built-in question bank is shown instead. Answers here count toward your study statistics.','本地书本题库未随文件分发，已自动切换到内置题库（含中英解析）。此处的作答同样计入学习统计。')
+      : t('Original English questions and explanations. Image-only options are preserved for manual review.','保留原书英文题目与解析；图片形式选项保留原样，供手动核对。')));
     const filters=el('div','book-filters');
     function selectControl(label,options,value,onChange) {
       const l=el('label','',label);const s=el('select');options.forEach(([v,title])=>{const o=el('option','',title);o.value=v;s.append(o);});
