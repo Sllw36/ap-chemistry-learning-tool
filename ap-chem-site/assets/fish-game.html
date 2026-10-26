@@ -450,6 +450,17 @@
   .combo-badge.on{display:inline-flex;animation:comboPulse .4s ease both}
   .slow-badge{display:none;font-family:var(--mono);font-size:8px;letter-spacing:.05em;color:#ff9aa8;border:1px solid rgba(255,90,114,.3);border-radius:4px;padding:2px 5px;background:rgba(255,90,114,.09)}
   .slow-badge.on{display:inline-flex;animation:slowPulse .8s ease-in-out infinite}
+  .dash-touch{
+    position:fixed;right:16px;bottom:96px;z-index:6;display:none;
+    width:64px;height:64px;border-radius:50%;border:1px solid rgba(140,220,240,.42);
+    background:radial-gradient(circle at 35% 30%,rgba(120,230,255,.30),rgba(10,40,56,.92));
+    color:#d9f7ff;font:600 13px/1 system-ui;letter-spacing:.06em;
+    box-shadow:0 8px 22px rgba(0,0,0,.45), inset 0 0 18px rgba(120,230,255,.18);
+    touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .dash-touch:active{transform:scale(.94);background:radial-gradient(circle at 35% 30%,rgba(140,240,255,.45),rgba(12,52,70,.96))}
+  .dash-touch.cool{opacity:.42}
+  @media (hover:none) and (pointer:coarse){ .dash-touch{display:block} }
   .dash-badge{display:none;font-family:var(--mono);font-size:8px;letter-spacing:.05em;color:#9fb6cf;border:1px solid rgba(160,190,220,.18);border-radius:4px;padding:2px 5px;background:rgba(160,190,220,.04)}
   .dash-badge.on{display:inline-flex}
   .dash-badge.ready{color:#8fe7ff;border-color:rgba(95,255,224,.26);background:rgba(95,255,224,.06)}
@@ -625,6 +636,7 @@
 </head>
 <body>
 <canvas id="gameCanvas"></canvas>
+  <button id="dashTouch" class="dash-touch" type="button" aria-label="冲刺">冲刺</button>
 <div id="vignette"></div>
 <div id="scanlines"></div>
 <div id="dangerVignette"></div>
@@ -5490,6 +5502,16 @@
   window.addEventListener('keyup', e => {
     keys.delete(e.key.toLowerCase());
   });
+  (function bindDashTouch(){
+    const btn = document.getElementById('dashTouch');
+    if (!btn) return;
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      ensureAudio();
+      tryDash();
+    });
+  })();
   el.canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     ensureAudio();
@@ -5515,8 +5537,8 @@
     }
   });
   window.addEventListener('pointerup', e => {
+    /* 抬手后保留目标点：触摸端实现「点哪游哪」，鼠标端同理 */
     pointer.down = false;
-    if ((e.pointerType || pointer.pointerType) !== 'mouse') pointer.active = false;
     try { el.canvas.releasePointerCapture(e.pointerId); } catch (err) {}
   });
   el.canvas.addEventListener('pointerleave', e => {

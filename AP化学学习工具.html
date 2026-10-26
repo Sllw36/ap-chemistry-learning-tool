@@ -4737,9 +4737,31 @@ html[data-theme="dark"] .geo-studio::before {
 #modalFormula.modal-above{z-index:1200}
 .fish-bar-title{min-width:0;overflow:hidden}
 .fish-bar-title b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media (max-width:699px){.fish-bar-actions{gap:6px}.fish-bar-actions .fish-exit{padding:0 9px;font-size:11px}.fish-bar-actions .fish-exit span{display:none}}
+@media (max-width:699px){.fish-bar-actions{gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.fish-bar-actions::-webkit-scrollbar{display:none}.fish-bar-actions .fish-exit{padding:0 9px;font-size:11px;white-space:nowrap;flex:0 0 auto}.fish-bar-actions .fish-exit span{display:none}.fish-bar-title b{font-size:11px}}
+@media (max-width:430px){.fish-bar-actions{gap:5px}.fish-bar-actions .fish-exit{padding:0 7px;font-size:10.5px;letter-spacing:0}.fish-bar{padding:0 8px 0 10px}.fish-bar-title{max-width:120px}}
 @media (max-width:699px){.fish-picker{gap:14px;padding:18px}.fish-pick{width:100%;padding:20px 18px}.fish-pick b{font-size:15.5px}}
 /* ===== AP_FISH_GAME:END (styles) ===== */
+
+/* ===== 移动端适配：3D 模型 / 路易斯工坊 ===== */
+@media (max-width:760px){
+  .geo-modal .geo-studio .app{padding:12px 12px 18px;gap:12px;min-height:0}
+  .geo-studio .workspace{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .geo-studio .stage{order:-1;position:sticky;top:0;z-index:6;height:46svh;min-height:0;border-radius:16px}
+  .geo-studio .rail{order:0;min-height:0;gap:14px}
+  .geo-studio .masthead{min-height:0;padding-right:96px}
+  .geo-studio .geo-close{top:10px;right:12px;height:32px;padding:0 10px;font-size:11.5px}
+  .geo-studio .stage-top{padding:10px 12px}
+  .lewis-studio .lede{display:none}
+  .lewis-studio #pageTitle{font-size:clamp(25px,7.4vw,33px);line-height:1.16}
+  .lewis-studio .hero-facts{margin-top:10px;gap:6px;max-width:none;justify-content:flex-start}
+  .lewis-studio .hero-facts .fact{font-size:10.5px;padding:3px 8px}
+  .lewis-modal .lewis-studio .topbar{padding-right:84px}
+  .lewis-studio .lewis-close{top:10px;right:12px;height:32px;padding:0 10px}
+}
+@media (max-width:430px){
+  .lewis-studio #pageTitle{font-size:25px}
+  .geo-studio .stage{height:42svh}
+}
 </style>
 <noscript><style>
 /* ================= 无 JavaScript 兜底 v2 =================
@@ -11909,8 +11931,8 @@ try{var _wm=localStorage.getItem("apchem.wmSize");if(_wm){document.documentEleme
   if (!fab || !modal || !picker || !frames.length) return;
 
   var GAME_NAMES = {
-    'fish-game.html': '深海刷题 · 大肥鱼',
-    'blade-game.html': '锻刀纳贡 · ForgeTax 2D'
+    'fish-game.html': '深海刷题',
+    'blade-game.html': '锻刀纳贡'
   };
 
   function gameUrl(file) {
